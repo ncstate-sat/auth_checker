@@ -11,6 +11,7 @@ name = "auth-checker"
 version = "1.0.0"
 authors = [
   { name="Ryan Semmler", email="rsemmle@ncsu.edu" },
+  { name="Luc Sanchez", email="lgsanche@ncsu.edu" },
 ]
 description = "Contains the AuthChecker class for apps using the Auth Service"
 readme = "README.md"
