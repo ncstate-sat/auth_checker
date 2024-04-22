@@ -16,7 +16,7 @@ authors = [
 description = "Contains the AuthChecker class for apps using the Auth Service"
 readme = "README.md"
 license = { file = "LICENSE" }
-requires-python = ">=3.6"
+requires-python = ">=3.10"
 dependencies = [
   "fastapi",
   "PyJWT"
