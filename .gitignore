@@ -1,3 +1,6 @@
 dist/
 venv/
 __pycache__
+
+.envrc
+.direnv/
