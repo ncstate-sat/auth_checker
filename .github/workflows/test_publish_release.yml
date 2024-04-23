@@ -5,7 +5,6 @@ on:
   push:
     branches:
       - main
-      - LIBS-21-auth-checker-update
   pull_request:
   workflow_dispatch:
 
