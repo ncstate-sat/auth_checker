@@ -1,0 +1,252 @@
+name: Test Publish and Release
+
+on:
+  # PR merges count as pushes
+  push:
+    branches:
+      - main
+      - LIBS-21-auth-checker-update
+  pull_request:
+  workflow_dispatch:
+
+env:
+    REPO_NAME: auth_checker
+    RELEASE_REPO: https://github.com/ncstate-sat/auth_checker
+    SLACK_UPDATES: true
+    # sends notifications to the acslib slack channel
+    SLACK_CHANNEL_ID: ${{ secrets.ACSLIB_CHANNEL_ID }}
+    FLIT_USERNAME: __token__
+    FLIT_PASSWORD: ${{ secrets.PYPI_TOKEN }}
+
+jobs:
+  run_tests:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get Code
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.head_ref }}
+
+      - name: Get SAT Actions
+        uses: actions/checkout@v3
+        with:
+          repository: ncstate-sat/actions
+          path: actions
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+
+      - name: Cache Packages
+        uses: actions/cache@v3
+        with:
+          path: ~/.local
+          key: requirements-local-${{ runner.os }}-${{ steps.setup_python.outputs.python-version }}-${{ hashFiles('**/requirements/base/base.txt') }}-${{ hashFiles('**/requirements/dev/dev.txt') }}-${{ hashFiles('.github/workflows/*.yml') }}
+          restore-keys: |
+            requirements-local-${{ runner.os }}-${{ steps.setup_python.outputs.python-version }}-
+
+      - name: Setup Virtual Environment
+        run: |
+          python -m venv /tmp/venv
+          source /tmp/venv/bin/activate
+          make setup
+
+      - name: Run Pre-commit
+        run: |
+          source /tmp/venv/bin/activate
+          pre-commit install
+          pre-commit run --all
+
+      - name: Run Tests
+        run: |
+          source /tmp/venv/bin/activate
+          pytest
+
+      - name: Send Failure Message on Slack if Tests Fail
+        if: ${{ failure() }}
+        uses: ./actions/slack-updates
+        with:
+          channel-id: ${{ github.event.inputs.slack-channel-id || env.SLACK_CHANNEL_ID }}
+          message: "The tests for `${{ env.REPO_NAME }}` have failed."
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+          SLACK_UPDATES: ${{ github.event.inputs.slack-updates || env.SLACK_UPDATES }}
+
+      - name: Send Success Message on Slack
+        uses: ./actions/slack-updates
+        with:
+          channel-id: ${{ github.event.inputs.slack-channel-id || env.SLACK_CHANNEL_ID }}
+          message: "The tests for `${{ env.REPO_NAME }}` have passed."
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+          SLACK_UPDATES: ${{ github.event.inputs.slack-updates || env.SLACK_UPDATES }}
+
+  # build_and_publish:
+  #   name: Build and Publish
+  #   # only proceed if test job ran successfully
+  #   needs: run_tests
+  #   if: ${{ github.event_name == 'push' }}
+  #   runs-on: ubuntu-latest
+  #   environment: release
+  #   permissions:
+  #     id-token: write
+  #   steps:
+  #     - name: Get Code
+  #       uses: actions/checkout@v3
+  #       with:
+  #         ref: ${{ github.head_ref }}
+  #         fetch-depth: 0
+  #         fetch-tags: true
+
+  #     - name: Retrieve current version
+  #       run: |
+  #         echo "CURRENT_VERSION_NUM=$(grep -m 1 version pyproject.toml | tr -s ' ' | tr -d '"' | tr -d "'" | cut -d' ' -f3)" >> $GITHUB_ENV
+  #         echo "CURRENT_VERSION=v$(grep -m 1 version pyproject.toml | tr -s ' ' | tr -d '"' | tr -d "'" | cut -d' ' -f3)" >> $GITHUB_ENV
+
+  #     - name: Retrieve previous version
+  #       run: |
+  #         PREV_VERSION=$(git describe --tags `git rev-list --tags --max-count=1`)
+  #         echo "PREV_VERSION=${PREV_VERSION}" >> $GITHUB_ENV
+  #         echo "PREV_VERSION_NUM=${PREV_VERSION:1}" >> $GITHUB_ENV
+
+  #     - name: Check if version has been updated
+  #       # first bash function checks if the first variable is less than or equal to the second one using version-sort
+  #       # second function uses the first to check if the first is strictly less than the second
+  #       run: |
+  #         verlte() { [  "$1" = "`echo -e "$1\n$2" | sort -V | head -n1`" ]; }
+  #         verlt() { [ "$1" = "$2" ] && return 1 || verlte $1 $2; }
+  #         verlt $PREV_VERSION_NUM $CURRENT_VERSION_NUM && echo "UPDATED=true" >> $GITHUB_ENV || echo "UPDATED=false" >> $GITHUB_ENV
+
+  #     - name: Fail if version has not been updated
+  #       if: ${{ !fromJSON(env.UPDATED) }}
+  #       run: |
+  #         echo "Version in pyproject.toml has not been updated"
+  #         exit 1
+
+  #     - name: Get SAT Actions
+  #       uses: actions/checkout@v3
+  #       with:
+  #         repository: ncstate-sat/actions
+  #         path: actions
+
+  #     - name: Setup Python
+  #       uses: actions/setup-python@v4
+  #       with:
+  #         python-version: "3.10"
+
+  #     - name: Cache Packages
+  #       uses: actions/cache@v3
+  #       with:
+  #         path: ~/.local
+  #         key: requirements-local-${{ runner.os }}-${{ steps.setup_python.outputs.python-version }}-${{ hashFiles('**/requirements/base/base.txt') }}-${{ hashFiles('**/requirements/dev/dev.txt') }}-${{ hashFiles('.github/workflows/*.yml') }}
+  #         restore-keys: |
+  #           requirements-local-${{ runner.os }}-${{ steps.setup_python.outputs.python-version }}-
+
+  #     - name: Setup Virtual Environment
+  #       run: python -m venv /tmp/venv
+
+  #     - name: Configure pip
+  #       run: |
+  #         source /tmp/venv/bin/activate
+  #         make setup
+
+  #     - name: Build and Publish
+  #       run: |
+  #         source /tmp/venv/bin/activate
+  #         flit publish
+
+  #     - name: Send Failure Message on Slack if Build/Publish Fails
+  #       if: ${{ failure() }}
+  #       uses: ./actions/slack-updates
+  #       with:
+  #         channel-id: ${{ github.event.inputs.slack-channel-id || env.SLACK_CHANNEL_ID }}
+  #         message: "The tests for `${{ env.REPO_NAME }}` have passed, but publishing to PyPI failed."
+  #       env:
+  #         SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+  #         SLACK_UPDATES: ${{ github.event.inputs.slack-updates || env.SLACK_UPDATES }}
+
+  #     - name: Send Success Message on Slack
+  #       uses: ./actions/slack-updates
+  #       with:
+  #         channel-id: ${{ github.event.inputs.slack-channel-id || env.SLACK_CHANNEL_ID }}
+  #         message: "A new version of `${{ env.REPO_NAME }}` has been uploaded to PyPI."
+  #       env:
+  #         SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+  #         SLACK_UPDATES: ${{ github.event.inputs.slack-updates || env.SLACK_UPDATES }}
+
+  # release:
+  #   name: Release
+  #   # only proceed if publish workflow ran successfully
+  #   needs: build_and_publish
+  #   if: ${{ github.event_name == 'push' }}
+  #   runs-on: ubuntu-latest
+  #   env:
+  #     PR_BODY: ${{ github.event.pull_request.body }}
+  #     LATEST_COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
+  #   steps:
+  #     - name: Get Code
+  #       uses: actions/checkout@v3
+  #       with:
+  #         ref: ${{ github.head_ref }}
+  #         fetch-depth: 0
+  #         fetch-tags: true
+
+  #     - name: Get SAT Actions
+  #       uses: actions/checkout@v3
+  #       with:
+  #         repository: ncstate-sat/actions
+  #         path: actions
+
+  #     - name: Retrieve current version
+  #       run: echo "CURRENT_VERSION=v$(grep -m 1 version pyproject.toml | tr -s ' ' | tr -d '"' | tr -d "'" | cut -d' ' -f3)" >> $GITHUB_ENV
+
+  #     - name: Retrieve previous version
+  #       run: echo "PREV_VERSION=$(git describe --tags `git rev-list --tags --max-count=1`)" >> $GITHUB_ENV
+
+  #     - name: Determine if event is a PR merge
+  #       if: contains(fromJSON('["pull_request"]'), github.event_name)
+  #       run: |
+  #         echo "BODY<<EOF" >> $GITHUB_ENV
+  #         echo "${PR_BODY}" >> ${GITHUB_ENV}
+  #         echo "EOF" >> $GITHUB_ENV
+
+  #     - name: Determine if event is just a push
+  #       if: ${{ ! contains(fromJSON('["pull_request"]'), github.event_name) }}
+  #       run: |
+  #         echo "BODY<<EOF" >> $GITHUB_ENV
+  #         echo "${LATEST_COMMIT_MESSAGE}" >> ${GITHUB_ENV}
+  #         echo "EOF" >> $GITHUB_ENV
+
+  #     - name: Create Release
+  #       uses: actions/create-release@v1
+  #       # This token is provided by Actions, you do not need to create your own token
+  #       env:
+  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #       with:
+  #         tag_name: "${{ env.CURRENT_VERSION }}"
+  #         release_name: "${{ env.CURRENT_VERSION }}"
+  #         body: |
+  #           ## What's Changed
+  #           ${{ env.BODY }}
+  #           **Full Changelog**: ${{ env.RELEASE_REPO }}/compare/${{ env.PREV_VERSION }}...${{ env.CURRENT_VERSION }}
+
+  #     - name: Send Failure Message on Slack if Release Fails
+  #       if: ${{ failure() }}
+  #       uses: ./actions/slack-updates
+  #       with:
+  #         channel-id: ${{ github.event.inputs.slack-channel-id || env.SLACK_CHANNEL_ID }}
+  #         message: "The new version of `${{ env.REPO_NAME }}` has been uploaded to PyPI, but the GitHub release failed."
+  #       env:
+  #         SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+  #         SLACK_UPDATES: ${{ github.event.inputs.slack-updates || env.SLACK_UPDATES }}
+
+  #     - name: Send Success Message on Slack
+  #       uses: ./actions/slack-updates
+  #       with:
+  #         channel-id: ${{ github.event.inputs.slack-channel-id || env.SLACK_CHANNEL_ID }}
+  #         message: "A new Github release for `${{ env.REPO_NAME }}` with version `${{ env.CURRENT_VERSION }}` has been created."
+  #       env:
+  #         SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+  #         SLACK_UPDATES: ${{ github.event.inputs.slack-updates || env.SLACK_UPDATES }}
