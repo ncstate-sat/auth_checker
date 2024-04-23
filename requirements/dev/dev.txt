@@ -7,7 +7,9 @@
 annotated-types==0.6.0
     # via pydantic
 anyio==4.3.0
-    # via starlette
+    # via
+    #   httpx
+    #   starlette
 attrs==23.2.0
     # via pytest
 bandit[toml]==1.7.8
@@ -15,7 +17,10 @@ bandit[toml]==1.7.8
 black==23.12.1
     # via auth-checker (pyproject.toml)
 certifi==2024.2.2
-    # via requests
+    # via
+    #   httpcore
+    #   httpx
+    #   requests
 cfgv==3.4.0
     # via pre-commit
 charset-normalizer==3.3.2
@@ -40,11 +45,18 @@ flit==3.9.0
     # via auth-checker (pyproject.toml)
 flit-core==3.9.0
     # via flit
+h11==0.14.0
+    # via httpcore
+httpcore==1.0.5
+    # via httpx
+httpx==0.27.0
+    # via auth-checker (pyproject.toml)
 identify==2.5.36
     # via pre-commit
 idna==3.7
     # via
     #   anyio
+    #   httpx
     #   requests
 iniconfig==2.0.0
     # via pytest
@@ -106,7 +118,9 @@ rich==13.7.1
 ruff==0.1.1
     # via auth-checker (pyproject.toml)
 sniffio==1.3.1
-    # via anyio
+    # via
+    #   anyio
+    #   httpx
 starlette==0.37.2
     # via fastapi
 stevedore==5.2.0
