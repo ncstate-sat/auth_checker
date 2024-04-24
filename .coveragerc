@@ -1,0 +1,3 @@
+[run]
+source = auth_checker
+omit = */migrations/*, */management/*, */helper_queries.py, */tests/*, */apps.py, */demo_automation/*, */urls.py, */config.py, */**/views.py

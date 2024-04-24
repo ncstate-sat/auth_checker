@@ -37,23 +37,18 @@ class AuthChecker:
         """
         token = authorization_header.lstrip("Bearer").strip()
         if not token:
-            raise HTTPException(
-                401,
-                detail="No token provided in 'Authorization' header"
-            )
+            raise HTTPException(401, detail="No token provided in 'Authorization' header")
         try:
             secret = os.getenv("JWT_SECRET")
             if not secret:
-                raise HTTPException(
-                    400,
-                    detail="No environment variable JWT_SECRET found"
-                )
+                raise HTTPException(400, detail="No environment variable JWT_SECRET found")
             payload = jwt.decode(token, secret, algorithms=["HS256"])
         except jwt.exceptions.ExpiredSignatureError:
             raise HTTPException(401, detail="Token is expired")
         except jwt.exceptions.InvalidSignatureError:
-            raise HTTPException(400, detail=("Token has an invalid signature. "
-                                             "Check the JWT_SECRET variable."))
+            raise HTTPException(
+                400, detail=("Token has an invalid signature. " "Check the JWT_SECRET variable.")
+            )
 
         user_authorizations = payload.get("authorizations", {})
         if user_authorizations.get("root") is True:
@@ -62,7 +57,4 @@ class AuthChecker:
         for required_auth in self.required_authorizations:
             # Throw a 403 if the authorization isn't there or is set to False:
             if user_authorizations.get(required_auth, False) is False:
-                raise HTTPException(
-                    403,
-                    detail=f"{required_auth} authorization is required."
-                )
+                raise HTTPException(403, detail=f"{required_auth} authorization is required.")

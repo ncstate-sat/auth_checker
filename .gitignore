@@ -1,3 +1,21 @@
 dist/
 venv/
 __pycache__
+
+.envrc
+.direnv/
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*,cover
+.hypothesis/
+.pytest_cache/
+
+# IDE settings
+.vscode/
