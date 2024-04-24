@@ -1,3 +1,7 @@
 dist/
 venv/
 __pycache__
+
+.direnv
+.envrc
+.idea
