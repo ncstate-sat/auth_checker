@@ -1,9 +1,12 @@
 import os
 from pathlib import Path
-
 import casbin
-
 from auth_checker.util.interfaces import BaseAuthorizer
+from auth_checker.util.settings import CASBIN_RBAC_MODEL
+from casbin.model import Model
+
+model = Model()
+model.load_model_from_text(CASBIN_RBAC_MODEL)
 
 CASBIN_AUTHORIZER_MODEL = os.getenv("CASBIN_AUTHORIZER_MODEL")
 CASBIN_AUTHORIZER_POLICY_ADAPTER = os.getenv("CASBIN_AUTHORIZER_POLICY_ADAPTER")
@@ -37,8 +40,8 @@ def _mongo_adapter():
     except ImportError:
         raise ImportError("casbin_mongo_adapter is not installed")
     adapter = Adapter(
-        os.getenv("MONGODB_URI"),
-        os.getenv("MONGODB_DB"),
+        os.getenv("AUTH_URI"),
+        os.getenv("AUTH_DB"),
     )
     return adapter
 
@@ -54,7 +57,6 @@ class CasbinAuthorizer(BaseAuthorizer):
     name = "casbin_authorizer"
 
     def __init__(self, *args, **kwargs):
-        model = kwargs.get("model", CASBIN_AUTHORIZER_MODEL)
         adapter = kwargs.get("adapter", ADAPTER_MAP[CASBIN_AUTHORIZER_POLICY_ADAPTER]())
         self.enforcer = casbin.Enforcer(model=model, adapter=adapter, enable_log=True)
         super().__init__(*args, **kwargs)

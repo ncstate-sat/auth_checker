@@ -1,6 +1,6 @@
-from auth_checker import GoogleJWTAuthenticator, Token, AuthNTypes
-from auth_checker.util import HTTPException
-from fastapi import APIRouter, Depends, Response, status
+from auth_checker.models import GoogleJWTAuthenticator, Token, AuthNTypes
+from auth_checker.util.exceptions import HTTPException
+from fastapi import APIRouter, Response, status
 from pydantic import BaseModel
 
 router = APIRouter()
