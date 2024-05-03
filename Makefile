@@ -14,6 +14,11 @@ install-dev:
 	@echo 'Installing requirements...'
 	pip-sync requirements/base/base.txt requirements/dev/dev.txt
 
+lab:
+	@echo 'Starting Jupyter Lab...'
+	jupyter lab
+
 setup:
 	@echo 'Setting up the environment...'
+	pip config --site set global.extra-index-url https://pypi.ehps.ncsu.edu/
 	make install-dev
