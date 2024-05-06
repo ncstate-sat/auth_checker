@@ -85,7 +85,7 @@ class Account:
 
     @staticmethod
     def get_service_account(email, name=""):
-        if db_account := None: # AuthDB.get_account_by_email(email):
+        if db_account := [PLACEHOLDER_ACCOUNT]: # AuthDB.get_account_by_email(email):
             logger.info(f"Service account found: {email}")
             service_account = Account(config=db_account)
             service_account.name = name or email

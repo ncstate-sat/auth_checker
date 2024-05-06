@@ -47,4 +47,3 @@ class Authenticate:
         new_refresh_token = Token.generate_refresh_token(email)
 
         return {"token": new_token, "refresh_token": new_refresh_token, "payload": account.__dict__}
-

@@ -25,14 +25,7 @@ class Token:
         """Decodes a JSON Web Token from this Auth Service.
         :param token: The token from this service.
         """
-        try:
-            return jwt.decode(token, os.getenv("JWT_SECRET"), ["HS256"])
-        except jwt.exceptions.ExpiredSignatureError:
-            raise HTTPException(401, detail="Token is expired")
-        except jwt.exceptions.InvalidSignatureError:
-            raise HTTPException(
-                400, detail=("Token has an invalid signature. " "Check the JWT_SECRET variable.")
-            )
+        return jwt.decode(token, os.getenv("JWT_SECRET"), ["HS256"])
 
     @staticmethod
     def generate_token(payload: dict):
