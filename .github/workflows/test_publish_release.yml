@@ -16,6 +16,7 @@ env:
     SLACK_CHANNEL_ID: ${{ secrets.ACSLIB_CHANNEL_ID }}
     FLIT_USERNAME: __token__
     FLIT_PASSWORD: ${{ secrets.PYPI_TOKEN }}
+    JWT_SECRET: Csk3wsxSFlqQeu8TSEPk # This isn't the real value, but a value must be present for tests to pass
 
 jobs:
   run_tests:
