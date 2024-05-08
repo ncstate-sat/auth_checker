@@ -10,7 +10,7 @@ class TokenRequestBody(BaseModel):
     token: str
 
 
-@router.post("", tags=["Authentication"])
+@router.post("/", tags=["Authentication"])
 def authenticate(response: Response, body: TokenRequestBody):
     """Authenticates with Google Identity Services.
 
@@ -33,3 +33,26 @@ def authenticate(response: Response, body: TokenRequestBody):
     except HTTPException as e:
         response.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
         return {"message": "There was an error decoding the Google token.", "error": e}
+    except AttributeError as ae:
+        response.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
+        return {"message": "There was a problem with the server configuration", "error": ae}
+
+
+@router.post("/refresh", tags=["Authentication"])
+def refresh_token(response: Response, body: TokenRequestBody):
+    """Returns a new token and refresh token.
+
+    The JWT used for authentication expires 15 minutes after it's generated.
+    The refresh token can be used to extend the user's session with the app
+    without asking them to sign back in. This function takes a refresh token,
+    and it returns a new auth token (expires in 15 minutes) and a new refresh token.
+    """
+    token = Token(body.token)
+    try:
+        account = token.decode_token()
+        new_token = token.get_token(account, AuthNTypes.OAUTH2)
+        new_refresh_token = token.generate_refresh_token(account.email)
+        return {"token": new_token, "refresh_token": new_refresh_token, "payload": account.render()}
+    except HTTPException:
+        response.status_code = status.HTTP_401_UNAUTHORIZED
+        return {"message": "Your login could not be authenticated."}

@@ -1,5 +1,8 @@
+from typing import Mapping
+
 import requests
 from google.auth import jwt
+import jwt as jot
 from google.auth.exceptions import InvalidValue, MalformedError
 import json
 from google.auth.transport import requests as google_auth_requests
@@ -27,9 +30,8 @@ class GoogleJWTAuthenticator(JWTAuthenticator):
     def __init__(self, token, auth_type=AuthNTypes.OAUTH2):
         self.token = token
         self.auth_type = auth_type
-        if client_id := GOOGLE_CLIENT_ID:
-            self.client_id = client_id
-        else:
+        self.client_id = GOOGLE_CLIENT_ID
+        if not self.client_id:
             raise AttributeError("Google Client ID is not set")
 
     def _oauth2(self) -> bool:
@@ -88,7 +90,7 @@ class Account:
     email = None
     client_email = None
 
-    def __init__(self, config: dict):
+    def __init__(self, config: Mapping[str, str]):
         for k, v in config.items():
             if hasattr(self, k):
                 setattr(self, k, v)
@@ -106,10 +108,10 @@ class Token:
         :param token: The token from this service.
         """
         try:
-            return jwt.decode(self.token, JWT_SECRET, "HS256")
-        except jwt.exceptions.ExpiredSignatureError:
+            return Account(jot.decode(self.token, JWT_SECRET, "HS256"))
+        except jot.exceptions.ExpiredSignatureError:
             raise HTTPException(401, detail="Token is expired")
-        except jwt.exceptions.InvalidSignatureError:
+        except jot.exceptions.InvalidSignatureError:
             raise HTTPException(
                 400, detail="Token has an invalid signature. Check the JWT_SECRET variable."
             )
@@ -121,7 +123,7 @@ class Token:
             payload["exp"] = datetime.now(tz=timezone.utc) + TOKEN_EXP_TIME
         if token_type == AuthNTypes.X509:
             payload["exp"] = datetime.now(tz=timezone.utc) + SERVICE_EXP_TIME
-        return jwt.encode(payload, JWT_SECRET, "HS256")
+        return jot.encode(payload, JWT_SECRET, "HS256")
 
     @staticmethod
     def generate_refresh_token(email, refresh: timedelta = REFRESH_TOKEN_EXP_TIME):
@@ -129,5 +131,5 @@ class Token:
         :param email: The email address of the user, which will be encoded in the token.
         :param refresh: A refresh expiry expressed as a timedelta. Defaults to 2 days.
         """
-        payload = ({"email": email, "exp": datetime.now(tz=timezone.utc) + refresh},)
-        return jwt.encode(payload, JWT_SECRET, "HS256")
+        payload = {"email": email, "exp": datetime.now(tz=timezone.utc) + refresh}
+        return jot.encode(payload, JWT_SECRET, "HS256")
