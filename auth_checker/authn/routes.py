@@ -8,6 +8,7 @@ router = APIRouter()
 
 class TokenRequestBody(BaseModel):
     token: str
+    tkn_type: int
 
 
 @router.post("/", tags=["Authentication"])
