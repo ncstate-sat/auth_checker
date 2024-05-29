@@ -4,6 +4,8 @@ from datetime import datetime, timedelta, timezone
 import jwt
 from google.auth.transport import requests as google_auth_requests
 from google.oauth2 import id_token
+from auth_checker.util.auth_types import AuthTypes
+from auth_checker.models.account import Account
 
 TOKEN_EXP_TIME = timedelta(minutes=15)
 SERVICE_EXP_TIME = timedelta(hours=8)
@@ -12,38 +14,28 @@ REFRESH_TOKEN_EXP_TIME = timedelta(days=2)
 
 class Token:
     @staticmethod
-    def decode_google_token(token):
-        """Decodes a token from Google Identity Services.
-        :param token: The token from Google.
-        """
-        return id_token.verify_oauth2_token(
-            token, google_auth_requests.Request(), os.getenv("GOOGLE_CLIENT_ID")
-        )
-
-    @staticmethod
-    def decode_token(token):
+    def decode_token(token, token_type: AuthTypes):
         """Decodes a JSON Web Token from this Auth Service.
         :param token: The token from this service.
         """
-        return jwt.decode(token, os.getenv("JWT_SECRET"), ["HS256"])
+        if token_type == AuthTypes.OAUTH2:
+            return jwt.decode(token, os.getenv("JWT_SECRET"), ["HS256"])
+        else:
+            return id_token.verify_oauth2_token(
+                token, google_auth_requests.Request(), os.getenv("GOOGLE_CLIENT_ID")
+            )
 
     @staticmethod
-    def generate_token(payload: dict):
+    def generate_token(account: Account, token_type: AuthTypes):
         """Generates a JSON Web Token given a payload.
         :param payload: The object which will be encoded in the token.
         """
-        token_payload = {"exp": datetime.now(tz=timezone.utc) + TOKEN_EXP_TIME}
-        token_payload.update(payload)
+        token_payload = account.render()
 
-        return jwt.encode(token_payload, os.getenv("JWT_SECRET"), "HS256")
-
-    @staticmethod
-    def service_account_token(payload: dict):
-        """Generates a JWT for service accounts which often need much longer
-        expiry times.
-        """
-        token_payload = {"exp": datetime.now(tz=timezone.utc) + SERVICE_EXP_TIME}
-        token_payload.update(payload)
+        if token_type == AuthTypes.OAUTH2:
+            token_payload["exp"] = datetime.now(tz=timezone.utc) + TOKEN_EXP_TIME
+        if token_type == AuthTypes.X509:
+            token_payload["exp"] = datetime.now(tz=timezone.utc) + SERVICE_EXP_TIME
 
         return jwt.encode(token_payload, os.getenv("JWT_SECRET"), "HS256")
 
@@ -58,10 +50,3 @@ class Token:
             os.getenv("JWT_SECRET"),
             "HS256",
         )
-
-    @classmethod
-    def decode_refresh_token(cls, token):
-        """Decodes a refresh JWT from this Auth Service.
-        :param token: The refresh token from this service.
-        """
-        return cls.decode_token(token)

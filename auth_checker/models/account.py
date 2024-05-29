@@ -8,11 +8,9 @@ PLACEHOLDER_ACCOUNT = {
     "email": "jtchampi@ncsu.edu",
     "name": "John Champion",
     "roles": [],
-    "authorizations": {
-        "_read": [],
-        "_write": []
-    }
+    "authorizations": {"_read": [], "_write": []},
 }
+
 
 def get_account_placeholder(email: str):
     if email == "jtchampi@ncsu.edu":
@@ -34,16 +32,16 @@ class Account:
             self.email = config["email"]
         if "name" in config:
             self.name = config["name"]
-        if "roles" in config:
-            self.roles = list(set(config["roles"]))
-        if "authorizations" in config:
-            self.authorizations = config["authorizations"]
         if "id" in config:
             self.id = config["id"]
 
+    def render(self):
+        """Returns a dict representing the account data."""
+        return {"email": self.email, "name": self.name}
+
     def update(self):
         """Updates this instance in the database."""
-        return # AuthDB.update_account(self.__dict__)
+        return  # AuthDB.update_account(self.__dict__)
 
     def add_role(self, role):
         """Adds a role to this user if it is not already added."""
@@ -57,7 +55,7 @@ class Account:
 
     def delete(self):
         """Deletes this instance from the database."""
-        return # AuthDB.delete_account(self.__dict__)
+        return  # AuthDB.delete_account(self.__dict__)
 
     @staticmethod
     def get_account(email, name=None):
@@ -69,7 +67,7 @@ class Account:
             email: The email address of the account.
             name: The name associated with the Google account.
         """
-        db_account = get_account_placeholder(email) # AuthDB.get_account_by_email(email)
+        db_account = get_account_placeholder(email)  # AuthDB.get_account_by_email(email)
         if db_account:
             user_account = Account(config=db_account)
         else:
@@ -85,7 +83,7 @@ class Account:
 
     @staticmethod
     def get_service_account(email, name=""):
-        if db_account := [PLACEHOLDER_ACCOUNT]: # AuthDB.get_account_by_email(email):
+        if db_account := [PLACEHOLDER_ACCOUNT]:  # AuthDB.get_account_by_email(email):
             logger.info(f"Service account found: {email}")
             service_account = Account(config=db_account)
             service_account.name = name or email
@@ -99,7 +97,7 @@ class Account:
 
         :param filter: The attribute that should be searched.
         """
-        db_accounts = [PLACEHOLDER_ACCOUNT] # AuthDB.get_accounts_by_role(role)
+        db_accounts = [PLACEHOLDER_ACCOUNT]  # AuthDB.get_accounts_by_role(role)
 
         accounts = []
         for account_config in db_accounts:
