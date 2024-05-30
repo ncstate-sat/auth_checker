@@ -9,10 +9,10 @@ router = APIRouter()
 
 class TokenRequestBody(BaseModel):
     token: str
-    tkn_type: int
+    token_type: AuthNTypes
 
 
-@router.post("/", tags=["Authentication"])
+@router.post("/token", tags=["Authentication"])
 def authenticate(response: Response, body: TokenRequestBody):
     """Authenticates with Google Identity Services.
 
@@ -40,7 +40,7 @@ def authenticate(response: Response, body: TokenRequestBody):
         return {"message": "There was a problem with the server configuration", "error": ae}
 
 
-@router.post("/refresh", tags=["Authentication"])
+@router.post("/token/refresh", tags=["Authentication"])
 def refresh_token(response: Response, body: TokenRequestBody):
     """Returns a new token and refresh token.
 

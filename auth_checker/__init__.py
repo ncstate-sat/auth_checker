@@ -1,4 +1,4 @@
-from auth_checker.util.authorizer import Authorizer
+from auth_checker.authz.authorizer import Authorizer
 from sat.logs import SATLogger
 import importlib
 import pkgutil
