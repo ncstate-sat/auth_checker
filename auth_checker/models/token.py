@@ -14,16 +14,12 @@ REFRESH_TOKEN_EXP_TIME = timedelta(days=2)
 
 class Token:
     @staticmethod
-    def decode_token(token, token_type: AuthTypes):
+    def decode_token(token):
         """Decodes a JSON Web Token from this Auth Service.
         :param token: The token from this service.
         """
-        if token_type == AuthTypes.OAUTH2:
-            return jwt.decode(token, os.getenv("JWT_SECRET"), ["HS256"])
-        else:
-            return id_token.verify_oauth2_token(
-                token, google_auth_requests.Request(), os.getenv("GOOGLE_CLIENT_ID")
-            )
+        decoded_token = jwt.decode(token, os.getenv("JWT_SECRET"), ["HS256"])
+        return Account(decoded_token)
 
     @staticmethod
     def generate_token(account: Account, token_type: AuthTypes):
