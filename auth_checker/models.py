@@ -89,6 +89,7 @@ class Account:
     name = None
     email = None
     client_email = None
+    permissions = None
 
     def __init__(self, config: Mapping[str, str]):
         for k, v in config.items():
