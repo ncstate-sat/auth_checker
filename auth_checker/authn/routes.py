@@ -1,4 +1,5 @@
-from auth_checker.models import GoogleJWTAuthenticator, Token, AuthNTypes
+from auth_checker.models import GoogleJWTAuthenticator, Token
+from auth_checker.util.authn_types import AuthNTypes
 from auth_checker.util.exceptions import HTTPException
 from fastapi import APIRouter, Response, status
 from pydantic import BaseModel

@@ -9,7 +9,7 @@ from google.auth.transport import requests as google_auth_requests
 from google.oauth2.id_token import verify_oauth2_token as v_oauth2
 from datetime import timedelta, datetime, timezone
 from auth_checker.util.settings import JWT_SECRET, GOOGLE_CLIENT_ID
-from auth_checker.util.authn_types import AuthNgsTypes
+from auth_checker.util.authn_types import AuthNTypes
 from auth_checker.util.exceptions import HTTPException
 from sat.logs import SATLogger
 
