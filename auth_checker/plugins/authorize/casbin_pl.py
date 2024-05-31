@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
 import casbin
-from auth_checker.util.interfaces import BaseAuthorizer
+from auth_checker.util.interfaces import TokenAuthorizer
 from auth_checker.util.settings import CASBIN_RBAC_MODEL
 from casbin.model import Model
 
@@ -53,10 +53,30 @@ ADAPTER_MAP = {
 }
 
 
-class CasbinAuthorizer(BaseAuthorizer):
+class CasbinTokenAuthorizer(TokenAuthorizer):
     name = "casbin_authorizer"
 
     def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         adapter = kwargs.get("adapter", ADAPTER_MAP[CASBIN_AUTHORIZER_POLICY_ADAPTER]())
         self.enforcer = casbin.Enforcer(model=model, adapter=adapter, enable_log=True)
-        super().__init__(*args, **kwargs)
+        # These are casbin specific attributes
+        # The first three will almost always be set
+        # Especially for RBAC style authorizations
+        self.subject = None
+        self.object = None
+        self.action = None
+        # Domain is added for completeness and can be used
+        # for more complex authorization schemes
+        self.domain = None
+
+
+    def validate_token(self, *args, **kwargs) -> bool:
+        return True
+
+    def authorize(self, *args, **kwargs) -> bool:
+        if action := kwargs.get("action"):
+            self.action = action
+
+        return self.enforcer.enforce(*args)
+

@@ -1,5 +1,5 @@
-from typing import Mapping
-
+from typing import Mapping, Union, Annotated
+from fastapi.security import HTTPBearer
 import requests
 from google.auth import jwt
 import jwt as jot
@@ -8,28 +8,41 @@ import json
 from google.auth.transport import requests as google_auth_requests
 from google.oauth2.id_token import verify_oauth2_token as v_oauth2
 from datetime import timedelta, datetime, timezone
-from auth_checker.util.settings import JWT_SECRET, GOOGLE_CLIENT_ID
+from auth_checker.util.settings import (
+    JWT_SECRET, GOOGLE_CLIENT_ID, JWT_ALGORITHM,
+    ACCOUNT_TOKEN_EXP_TIME, SERVICE_TOKEN_EXP_TIME, REFRESH_TOKEN_EXP_TIME
+)
 from auth_checker.util.authn_types import AuthNTypes
 from auth_checker.util.exceptions import HTTPException
 from sat.logs import SATLogger
+from pydantic import BaseModel
 
 logger = SATLogger(__name__)
 
 
-TOKEN_EXP_TIME = timedelta(minutes=15)
-SERVICE_EXP_TIME = timedelta(hours=8)
-REFRESH_TOKEN_EXP_TIME = timedelta(days=2)
+TOKEN_EXP_TIME = timedelta(minutes=ACCOUNT_TOKEN_EXP_TIME)
+SERVICE_EXP_TIME = timedelta(hours=SERVICE_TOKEN_EXP_TIME)
+REFRESH_EXP_TIME = timedelta(days=REFRESH_TOKEN_EXP_TIME)
 
 
-class JWTAuthenticator:
+class AuthnTokenRequestBody(BaseModel):
+    """
+    The primary model for tracking the information need to authenticate with a
+    token.
+    """
+    token: str
+    authn_type: AuthNTypes
+
+
+class Authenticator:
     def authenticate(self) -> bool:
         raise NotImplementedError
 
 
-class GoogleJWTAuthenticator(JWTAuthenticator):
-    def __init__(self, token, auth_type=AuthNTypes.OAUTH2):
-        self.token = token
-        self.auth_type = auth_type
+class GoogleJWTAuthenticator(Authenticator):
+    def __init__(self, body: AuthnTokenRequestBody):
+        self.token = body.token
+        self.auth_type = body.authn_type
         self.client_id = GOOGLE_CLIENT_ID
         if not self.client_id:
             raise AttributeError("Google Client ID is not set")
@@ -100,37 +113,35 @@ class Account:
         return {"name": self.name, "email": self.email, "client_email": self.client_email}
 
 
-class Token:
-    def __init__(self, token: str):
-        self.token = token
+def validate_token(token: str) -> bool:
+    """
+    Validates a JSON Web Token for this app.
+    Sets the account attribute if the token is valid.
+    :returns bool
+    """
+    try:
+        if jot.decode(token, JWT_SECRET, JWT_ALGORITHM):
+            return True
+    except jot.exceptions.ExpiredSignatureError:
+        raise HTTPException(401, detail="Token is expired")
+    except jot.exceptions.InvalidSignatureError:
+        raise HTTPException(
+            400, detail="Token has an invalid signature. Check the JWT_SECRET variable."
+        )
 
-    def decode_token(self):
-        """Decodes a JSON Web Token from this Auth Service.
-        :param token: The token from this service.
-        """
-        try:
-            return Account(jot.decode(self.token, JWT_SECRET, "HS256"))
-        except jot.exceptions.ExpiredSignatureError:
-            raise HTTPException(401, detail="Token is expired")
-        except jot.exceptions.InvalidSignatureError:
-            raise HTTPException(
-                400, detail="Token has an invalid signature. Check the JWT_SECRET variable."
-            )
 
-    @staticmethod
-    def get_token(payload: Account, token_type: AuthNTypes):
-        payload = payload.render()
-        if token_type == AuthNTypes.OAUTH2:
-            payload["exp"] = datetime.now(tz=timezone.utc) + TOKEN_EXP_TIME
-        if token_type == AuthNTypes.X509:
-            payload["exp"] = datetime.now(tz=timezone.utc) + SERVICE_EXP_TIME
-        return jot.encode(payload, JWT_SECRET, "HS256")
+def get_refresh_token(self, refresh: timedelta = REFRESH_EXP_TIME):
+    """Generates a refresh JWT given an email address.
+    :param refresh: A refresh expiry expressed as a timedelta. Defaults to 2 days.
+    """
+    payload = {"email": self.account.email, "exp": datetime.now(tz=timezone.utc) + refresh}
+    return jot.encode(payload, JWT_SECRET, JWT_ALGORITHM)
 
-    @staticmethod
-    def generate_refresh_token(email, refresh: timedelta = REFRESH_TOKEN_EXP_TIME):
-        """Generates a refresh JWT given an email address.
-        :param email: The email address of the user, which will be encoded in the token.
-        :param refresh: A refresh expiry expressed as a timedelta. Defaults to 2 days.
-        """
-        payload = {"email": email, "exp": datetime.now(tz=timezone.utc) + refresh}
-        return jot.encode(payload, JWT_SECRET, "HS256")
+
+def get_authn_token(payload: Account, token_type: AuthNTypes):
+    payload = payload.render()
+    if token_type == AuthNTypes.OAUTH2:
+        payload["exp"] = datetime.now(tz=timezone.utc) + TOKEN_EXP_TIME
+    if token_type == AuthNTypes.X509:
+        payload["exp"] = datetime.now(tz=timezone.utc) + SERVICE_EXP_TIME
+    return jot.encode(payload, JWT_SECRET, JWT_ALGORITHM)
