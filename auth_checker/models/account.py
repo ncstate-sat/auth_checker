@@ -1,6 +1,7 @@
 """A model to handle account CRUD."""
 
 from sat.logs import SATLogger
+from plugins.authorize.satauth_pl import MongoAuthorizer
 
 logger = SATLogger(__name__)
 
@@ -67,7 +68,9 @@ class Account:
             email: The email address of the account.
             name: The name associated with the Google account.
         """
-        db_account = get_account_placeholder(email)  # AuthDB.get_account_by_email(email)
+        db_account = MongoAuthorizer.authorize(
+            email
+        )  # get_account_placeholder(email)  # AuthDB.get_account_by_email(email)
         if db_account:
             user_account = Account(config=db_account)
         else:
@@ -83,7 +86,9 @@ class Account:
 
     @staticmethod
     def get_service_account(email, name=""):
-        if db_account := [PLACEHOLDER_ACCOUNT]:  # AuthDB.get_account_by_email(email):
+        if db_account := MongoAuthorizer.authorize(
+            email
+        ):  # [PLACEHOLDER_ACCOUNT]  # AuthDB.get_account_by_email(email)
             logger.info(f"Service account found: {email}")
             service_account = Account(config=db_account)
             service_account.name = name or email
@@ -91,13 +96,15 @@ class Account:
         logger.info(f"Service account not found: {email}")
 
     @staticmethod
-    def find_by_role(role):
+    def find_by_role(roles):
         """
         Finds accounts given authorization data.
 
         :param filter: The attribute that should be searched.
         """
-        db_accounts = [PLACEHOLDER_ACCOUNT]  # AuthDB.get_accounts_by_role(role)
+        db_accounts = MongoAuthorizer.users_for_role(
+            roles
+        )  # [PLACEHOLDER_ACCOUNT]  # AuthDB.get_accounts_by_role(role)
 
         accounts = []
         for account_config in db_accounts:

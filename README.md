@@ -36,3 +36,14 @@ from fastapi import APIRouter, Depends
 
 # authorize a user with "personnel_write" permissions to disable personnel
 @router.post("/disable", tags=["Personnel"], dependencies=[Depends(AuthChecker("personnel_write"))])
+```
+
+#### Add auth endpoints to service
+
+```python
+from auth_checker.authenticate import router as auth_router
+
+...
+
+app.include_router(auth_router, prefix="/auth")
+```

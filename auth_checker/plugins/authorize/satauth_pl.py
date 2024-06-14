@@ -87,3 +87,6 @@ class MongoAuthorizer(BaseAuthorizer):
 
     def permissions_for_user(self, *args, **kwargs) -> list[Any]:
         return self.roles_for_user(*args, **kwargs)
+
+    def set_user_roles(self, *args, **kwargs) -> list[str]:
+        raise NotImplementedError
