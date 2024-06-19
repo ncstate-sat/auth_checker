@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
 import casbin
-from auth_checker.util.interfaces import TokenAuthorizer
+from auth_checker.util.interfaces import BaseAuthorizer
 from auth_checker.util.settings import CASBIN_RBAC_MODEL
 from casbin.model import Model
 
@@ -10,6 +10,7 @@ model.load_model_from_text(CASBIN_RBAC_MODEL)
 
 CASBIN_AUTHORIZER_MODEL = os.getenv("CASBIN_AUTHORIZER_MODEL")
 CASBIN_AUTHORIZER_POLICY_ADAPTER = os.getenv("CASBIN_AUTHORIZER_POLICY_ADAPTER")
+CASBIN_APP_NAME = os.getenv("CASBIN_APP_NAME", "auth_checker")
 
 
 def _redis_adapter():
@@ -53,30 +54,32 @@ ADAPTER_MAP = {
 }
 
 
-class CasbinTokenAuthorizer(TokenAuthorizer):
+class CasbinAuthorizer(BaseAuthorizer):
     name = "casbin_authorizer"
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         adapter = kwargs.get("adapter", ADAPTER_MAP[CASBIN_AUTHORIZER_POLICY_ADAPTER]())
-        self.enforcer = casbin.Enforcer(model=model, adapter=adapter, enable_log=True)
-        # These are casbin specific attributes
-        # The first three will almost always be set
-        # Especially for RBAC style authorizations
-        self.subject = None
-        self.object = None
-        self.action = None
-        # Domain is added for completeness and can be used
-        # for more complex authorization schemes
-        self.domain = None
-
-
-    def validate_token(self, *args, **kwargs) -> bool:
-        return True
+        self.enforcer = casbin.Enforcer(model=model, adapter=adapter, enable_log=False)
 
     def authorize(self, *args, **kwargs) -> bool:
-        if action := kwargs.get("action"):
-            self.action = action
+        """
+        Authorize a user to perform an action on an object
+        kwargs are not supported for casbin authorize
+        :param args:
+        :param kwargs:
+        :return:
+        """
+        if args:
+            subject, _object, action = args
+            return self.enforcer.enforce(subject, _object, action)
+        return False
 
-        return self.enforcer.enforce(*args)
+    def roles_for_user(self, *args, **kwargs) -> list[str]:
+        if args:
+            subject = args[0]
+            return self.enforcer.get_roles_for_user(subject)
+        return []
 
+    def permissions_for_user(self, *args, **kwargs):
+        raise NotImplementedError

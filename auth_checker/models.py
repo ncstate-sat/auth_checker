@@ -1,5 +1,5 @@
 from typing import Mapping, Union, Annotated
-from fastapi.security import HTTPBearer
+from fastapi import Header
 import requests
 from google.auth import jwt
 import jwt as jot
@@ -12,6 +12,7 @@ from auth_checker.util.settings import (
     JWT_SECRET, GOOGLE_CLIENT_ID, JWT_ALGORITHM,
     ACCOUNT_TOKEN_EXP_TIME, SERVICE_TOKEN_EXP_TIME, REFRESH_TOKEN_EXP_TIME
 )
+from auth_checker.authz.authorizer import Authorizer
 from auth_checker.util.authn_types import AuthNTypes
 from auth_checker.util.exceptions import HTTPException
 from sat.logs import SATLogger
@@ -23,6 +24,7 @@ logger = SATLogger(__name__)
 TOKEN_EXP_TIME = timedelta(minutes=ACCOUNT_TOKEN_EXP_TIME)
 SERVICE_EXP_TIME = timedelta(hours=SERVICE_TOKEN_EXP_TIME)
 REFRESH_EXP_TIME = timedelta(days=REFRESH_TOKEN_EXP_TIME)
+authz = Authorizer()
 
 
 class AuthnTokenRequestBody(BaseModel):
@@ -48,9 +50,7 @@ class GoogleJWTAuthenticator(Authenticator):
             raise AttributeError("Google Client ID is not set")
 
     def _oauth2(self) -> bool:
-        """Decodes a token from Google Identity Services.
-        :param token: The token from Google.
-        """
+        """Decodes a token from Google Identity Services."""
         try:
             if token := v_oauth2(self.token, google_auth_requests.Request(), self.client_id):
                 self.account = Account(token)
@@ -98,11 +98,9 @@ class GoogleJWTAuthenticator(Authenticator):
 
 class Account:
     """The Account Model"""
-
     name = None
     email = None
     client_email = None
-    permissions = None
 
     def __init__(self, config: Mapping[str, str]):
         for k, v in config.items():
@@ -113,28 +111,35 @@ class Account:
         return {"name": self.name, "email": self.email, "client_email": self.client_email}
 
 
-def validate_token(token: str) -> bool:
-    """
-    Validates a JSON Web Token for this app.
-    Sets the account attribute if the token is valid.
-    :returns bool
-    """
-    try:
-        if jot.decode(token, JWT_SECRET, JWT_ALGORITHM):
-            return True
-    except jot.exceptions.ExpiredSignatureError:
-        raise HTTPException(401, detail="Token is expired")
-    except jot.exceptions.InvalidSignatureError:
-        raise HTTPException(
-            400, detail="Token has an invalid signature. Check the JWT_SECRET variable."
-        )
+class TokenValidator:
+    def __init__(self, bearer: Annotated[Union[str, None], Header()] = None):
+        self.token = bearer
+        self.account = None
+        self._validate()
+
+    def _validate(self) -> bool:
+        """
+        Validates a JSON Web Token for this app.
+        :returns tuple: (bool, Account)
+        """
+        try:
+            if token_map := jot.decode(self.token, JWT_SECRET, algorithms=[JWT_ALGORITHM]):
+                self.account = Account(token_map)
+                return True
+        except jot.exceptions.ExpiredSignatureError:
+            raise HTTPException(401, detail="Token is expired")
+        except jot.exceptions.InvalidSignatureError:
+            raise HTTPException(
+                400, detail="Token has an invalid signature. Check the JWT_SECRET variable."
+            )
 
 
-def get_refresh_token(self, refresh: timedelta = REFRESH_EXP_TIME):
+def get_refresh_token(account: Account, refresh: timedelta = REFRESH_EXP_TIME):
     """Generates a refresh JWT given an email address.
+    :param account: An Account object.
     :param refresh: A refresh expiry expressed as a timedelta. Defaults to 2 days.
     """
-    payload = {"email": self.account.email, "exp": datetime.now(tz=timezone.utc) + refresh}
+    payload = {"email": account.email, "exp": datetime.now(tz=timezone.utc) + refresh}
     return jot.encode(payload, JWT_SECRET, JWT_ALGORITHM)
 
 

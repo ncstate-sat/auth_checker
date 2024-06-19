@@ -32,13 +32,3 @@ class BaseAuthorizer(AuthorizerPlugin):
 
     def permissions_for_user(self, *args, **kwargs) -> list[Any]:
         raise NotImplementedError
-
-
-class TokenAuthorizer(BaseAuthorizer):
-    name = "__token_authorizer__"
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-    def validate_token(self, *args, **kwargs) -> bool:
-        raise NotImplementedError
