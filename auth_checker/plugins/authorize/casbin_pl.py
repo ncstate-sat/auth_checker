@@ -5,12 +5,13 @@ from auth_checker.util.interfaces import BaseAuthorizer
 from auth_checker.util.settings import CASBIN_RBAC_MODEL
 from casbin.model import Model
 
+# For V1 of the Casbin model, we will use a model defined in the settings
+# TODO: Add support for loading a model from a file that whose path is defined in the settings
 model = Model()
 model.load_model_from_text(CASBIN_RBAC_MODEL)
 
-CASBIN_AUTHORIZER_MODEL = os.getenv("CASBIN_AUTHORIZER_MODEL")
 CASBIN_AUTHORIZER_POLICY_ADAPTER = os.getenv("CASBIN_AUTHORIZER_POLICY_ADAPTER")
-CASBIN_APP_NAME = os.getenv("CASBIN_APP_NAME", "auth_checker")
+CASBIN_POLICY_FILE = os.getenv("CASBIN_POLICY_FILE", None)
 
 
 def _redis_adapter():
@@ -29,9 +30,9 @@ def _redis_adapter():
 
 
 def _file_adapter():
-    if not Path(CASBIN_AUTHORIZER_POLICY_ADAPTER).exists():
-        raise FileNotFoundError(f"File {CASBIN_AUTHORIZER_POLICY_ADAPTER} not found")
-    adapter = casbin.FileAdapter(CASBIN_AUTHORIZER_POLICY_ADAPTER)
+    if not Path(CASBIN_POLICY_FILE).exists():
+        raise FileNotFoundError(f"File {CASBIN_POLICY_FILE} not found")
+    adapter = casbin.FileAdapter(CASBIN_POLICY_FILE)
     return adapter
 
 
@@ -41,8 +42,8 @@ def _mongo_adapter():
     except ImportError:
         raise ImportError("casbin_mongo_adapter is not installed")
     adapter = Adapter(
-        os.getenv("AUTH_URI"),
-        os.getenv("AUTH_DB"),
+        os.getenv("CASBIN_AUTH_URI"),
+        os.getenv("CASBIN_AUTH_DB"),
     )
     return adapter
 
