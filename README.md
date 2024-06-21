@@ -10,7 +10,7 @@ A library that provides both authentication and authorization functionalities.
 
 ## Authentication
 
-Currently, there is only a single authentication method available, which is token based via Google Authentication. But 
+Currently, there is only a single authentication method available, which is token based via Google Authentication. But
 the library is designed to be extensible, by extending the `Authenticator` class and implementing the `authenticate` method.
 
 The library provides two FastAPI routes that provide initial authentication and token refresh functionalities.
@@ -93,3 +93,23 @@ The `redis` Policy Adapter requires the following environment variables:
 * CASBIN_REDIS_PORT (optional) - Default is 6379
 * CASBIN_REDIS_PASSWORD (optional) - Default is None
 * CASBIN_REDIS_DB (optional) - Default is 0
+
+##### Adding Policies
+
+Right now there is no frontend for adding policies. You can add policies by using the Casbin library directly.
+The functions required to manage the policy store can be found here: [Casbin Policy Management](https://github.com/casbin/pycasbin/blob/master/casbin/enforcer.py)
+
+```python
+from auth_checker.authz.authorizer import Authorizer
+
+authz = Authorizer()
+
+# First lets create a staff role for an application called `my_app`
+authz.enforcer.add_policy("staff", "my_app", "read")
+authz.enforcer.add_policy("staff", "my_app", "write")
+
+# Now let's add a user to the staff role
+authz.enforcer.add_role_for_user("user@company.com", "staff")
+
+
+```
