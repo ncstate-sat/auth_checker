@@ -20,3 +20,6 @@ coverage.xml
 # IDE settings
 .vscode/
 .idea/
+
+# repo pulled in for CI/CD
+actions/
