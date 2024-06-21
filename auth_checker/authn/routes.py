@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from auth_checker.models import (
+from auth_checker.models.models import (
     GoogleJWTAuthenticator,
     get_authn_token,
     get_refresh_token,
