@@ -1,6 +1,11 @@
 from typing import Annotated
 
-from auth_checker.models import GoogleJWTAuthenticator, get_authn_token, get_refresh_token, TokenValidator
+from auth_checker.models import (
+    GoogleJWTAuthenticator,
+    get_authn_token,
+    get_refresh_token,
+    TokenValidator,
+)
 from auth_checker.util.exceptions import HTTPException
 from auth_checker.authz.authorizer import Authorizer
 from fastapi import APIRouter, Response, status
@@ -12,8 +17,7 @@ router = APIRouter()
 
 @router.post("/token", tags=["Authentication"])
 def authenticate(
-        response: Response,
-        authn: Annotated[GoogleJWTAuthenticator, Depends(GoogleJWTAuthenticator)]
+    response: Response, authn: Annotated[GoogleJWTAuthenticator, Depends(GoogleJWTAuthenticator)]
 ):
     """Authenticates with Google Identity Services.
 

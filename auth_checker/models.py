@@ -9,8 +9,12 @@ from google.auth.transport import requests as google_auth_requests
 from google.oauth2.id_token import verify_oauth2_token as v_oauth2
 from datetime import timedelta, datetime, timezone
 from auth_checker.util.settings import (
-    JWT_SECRET, GOOGLE_CLIENT_ID, JWT_ALGORITHM,
-    ACCOUNT_TOKEN_EXP_TIME, SERVICE_TOKEN_EXP_TIME, REFRESH_TOKEN_EXP_TIME
+    JWT_SECRET,
+    GOOGLE_CLIENT_ID,
+    JWT_ALGORITHM,
+    ACCOUNT_TOKEN_EXP_TIME,
+    SERVICE_TOKEN_EXP_TIME,
+    REFRESH_TOKEN_EXP_TIME,
 )
 from auth_checker.authz.authorizer import Authorizer
 from auth_checker.util.authn_types import AuthNTypes
@@ -32,6 +36,7 @@ class AuthnTokenRequestBody(BaseModel):
     The primary model for tracking the information need to authenticate with a
     token.
     """
+
     token: str
     authn_type: AuthNTypes
 
@@ -98,6 +103,7 @@ class GoogleJWTAuthenticator(Authenticator):
 
 class Account:
     """The Account Model"""
+
     name = None
     email = None
     client_email = None
