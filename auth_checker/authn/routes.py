@@ -23,6 +23,8 @@ def authenticate(
 
     The token, supplied by Google Identity Services, is passed in. Returned is a new token
     that can be used with other services.
+
+    :returns: A new token, refresh token, and account information.
     """
     authz = Authorizer()
     try:
@@ -51,11 +53,9 @@ def refresh_token(response: Response, token: Annotated[TokenValidator, Depends(T
     The JWT used for authentication expires 15 minutes after it's generated.
     The refresh token can be used to extend the user's session with the app
     without asking them to sign back in.
+
+    :returns: A new refresh token and the account information.
     """
-    try:
-        account = token.account
-        new_refresh_token = get_refresh_token(token.account)
-        return {"refresh_token": new_refresh_token, "payload": account.render()}
-    except HTTPException:
-        response.status_code = status.HTTP_401_UNAUTHORIZED
-        return {"message": "Your login could not be authenticated."}
+    account = token.account
+    new_refresh_token = get_refresh_token(token.account)
+    return {"refresh_token": new_refresh_token, "account": account.render()}

@@ -117,3 +117,8 @@ max-complexity = 10
 [tool.bandit]
 exclude_dirs = ["tests", "auth_checker/tests"]
 skips = ["B101", "B601"]
+
+[tool.pytest_env]
+GOOGLE_CLIENT_ID = "google_client_id"
+JWT_SECRET = "jwt_secret"
+JWT_ALGORITHM = "HS256"

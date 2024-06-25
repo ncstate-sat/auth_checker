@@ -1,3 +1,12 @@
 [run]
 source = auth_checker
 omit = */migrations/*, */management/*, */helper_queries.py, */tests/*, */apps.py, */demo_automation/*, */urls.py, */config.py, */**/views.py
+
+[report]
+exclude_lines =
+    pragma: no cover
+    def __repr__
+    if self.debug:
+    if settings.DEBUG
+    if __name__ == .__main__.:
+skip_covered = True

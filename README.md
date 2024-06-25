@@ -110,6 +110,12 @@ authz.enforcer.add_policy("staff", "my_app", "write")
 
 # Now let's add a user to the staff role
 authz.enforcer.add_role_for_user("user@company.com", "staff")
+```
+There are more examples of how to organize the policy structure in `notebooks/setup_casbin_policy_store.ipynb`.
 
+To use the notebook, you will need to make sure the required environment variables are set. Then bring up jupyter lab
+and open the notebook.
 
+```shell
+$> make lab
 ```

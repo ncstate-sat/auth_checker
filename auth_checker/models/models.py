@@ -16,7 +16,7 @@ from auth_checker.util.settings import (
     SERVICE_TOKEN_EXP_TIME,
     REFRESH_TOKEN_EXP_TIME,
 )
-from auth_checker.authz.authorizer import Authorizer
+
 from auth_checker.util.authn_types import AuthNTypes
 from auth_checker.util.exceptions import HTTPException
 from sat.logs import SATLogger
@@ -28,7 +28,6 @@ logger = SATLogger(__name__)
 TOKEN_EXP_TIME = timedelta(minutes=ACCOUNT_TOKEN_EXP_TIME)
 SERVICE_EXP_TIME = timedelta(hours=SERVICE_TOKEN_EXP_TIME)
 REFRESH_EXP_TIME = timedelta(days=REFRESH_TOKEN_EXP_TIME)
-authz = Authorizer()
 
 
 class AuthnTokenRequestBody(BaseModel):
@@ -47,6 +46,8 @@ class Authenticator:
 
 
 class GoogleJWTAuthenticator(Authenticator):
+    account = None
+
     def __init__(self, body: AuthnTokenRequestBody):
         self.token = body.token
         self.auth_type = body.authn_type
@@ -140,13 +141,22 @@ class TokenValidator:
             )
 
 
+def _encode_jwt(payload: dict, secret: str, algorithm: str) -> str:
+    try:
+        return jot.encode(payload, secret, algorithm)
+    except jot.exceptions.InvalidAlgorithmError as e:
+        raise HTTPException(401, detail=str(e))
+    except Exception as e:
+        raise HTTPException(500, detail=f"An unknown error has occurred: {e}")
+
+
 def get_refresh_token(account: Account, refresh: timedelta = REFRESH_EXP_TIME):
     """Generates a refresh JWT given an email address.
     :param account: An Account object.
     :param refresh: A refresh expiry expressed as a timedelta. Defaults to 2 days.
     """
     payload = {"email": account.email, "exp": datetime.now(tz=timezone.utc) + refresh}
-    return jot.encode(payload, JWT_SECRET, JWT_ALGORITHM)
+    return _encode_jwt(payload, JWT_SECRET, JWT_ALGORITHM)
 
 
 def get_authn_token(payload: Account, token_type: AuthNTypes):
@@ -155,4 +165,4 @@ def get_authn_token(payload: Account, token_type: AuthNTypes):
         payload["exp"] = datetime.now(tz=timezone.utc) + TOKEN_EXP_TIME
     if token_type == AuthNTypes.X509:
         payload["exp"] = datetime.now(tz=timezone.utc) + SERVICE_EXP_TIME
-    return jot.encode(payload, JWT_SECRET, JWT_ALGORITHM)
+    return _encode_jwt(payload, JWT_SECRET, JWT_ALGORITHM)
