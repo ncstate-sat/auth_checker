@@ -64,7 +64,7 @@ class GoogleJWTAuthenticator(Authenticator):
         except ValueError as e:
             raise HTTPException(status_code=500, detail=str(e))
 
-    def _x509(self) -> bool:
+    def _x509(self) -> bool:  # pragma: no cover
         """
         Takes a jwt payload signed by a google service account, and authenticates the
         signature. The signed_jwt payload must include the `client_x509_cert_url`  and the
@@ -76,6 +76,10 @@ class GoogleJWTAuthenticator(Authenticator):
         unverified_claims = jwt.decode(self.token, verify=False)
         if url := unverified_claims.get("client_x509_cert_url"):
             # Get the public certs for the client
+
+            # This part of the code is essentially untestable because it requires real
+            # google services to be running, a real service account, and a real jwt token
+            # from google.
             certs = requests.get(url, timeout=3)
             if certs.status_code != 200:
                 logger.error(f"Could not get public certs for {url}")
@@ -94,6 +98,10 @@ class GoogleJWTAuthenticator(Authenticator):
                     return False
         else:
             logger.error("The jwt supplied payload is missing the client_x509_cert_url")
+            raise HTTPException(
+                status_code=400,
+                detail="The jwt supplied payload is missing the client_x509_cert_url",
+            )
 
     def authenticate(self) -> bool:
         if self.auth_type == AuthNTypes.OAUTH2:
@@ -144,7 +152,7 @@ class TokenValidator:
 def _encode_jwt(payload: dict, secret: str, algorithm: str) -> str:
     try:
         return jot.encode(payload, secret, algorithm)
-    except jot.exceptions.InvalidAlgorithmError as e:
+    except NotImplementedError as e:
         raise HTTPException(401, detail=str(e))
     except Exception as e:
         raise HTTPException(500, detail=f"An unknown error has occurred: {e}")

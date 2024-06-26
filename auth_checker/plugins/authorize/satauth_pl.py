@@ -5,9 +5,12 @@ from pymongo import MongoClient
 
 from auth_checker.util.interfaces import BaseAuthorizer
 
+# Not covered by tests as this is a plugin that is not used in the current implementation
+# and is meant more as a demonstration of how to create a plugin for the authorizer.
 
-class MongoAuthorizer(BaseAuthorizer):
-    name = "mongo_authorizer"
+
+class ExampleMongoAuthorizer(BaseAuthorizer):  # pragma: no cover
+    name = "example_mongo_authorizer"
     account_collection = None
     role_collection = None
 
