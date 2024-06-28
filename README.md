@@ -45,7 +45,7 @@ There is a `satauth_pl` plugin that is provided, but it is primarily meant as a 
 The library provides two fastapi routes for authorization:
 
 * `/casbin` The root route provides casbin enforcer authorization route.
-* `/casbin/roles` The roles route provides casbin enforcer roles route for the user.
+* `/roles` The roles route provides roles route for the user. This endpoint is not casbin specific.
 
 ### Usage
 

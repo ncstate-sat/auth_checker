@@ -22,7 +22,7 @@ def authorize(
         if not authz.authorize(valid.account.email, resource, action):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="You are not authorized to perform this action.",
+                detail="User is not authorized to perform this action.",
             )
     except AttributeError as ae:
         raise HTTPException(
@@ -31,7 +31,7 @@ def authorize(
         )
 
 
-@router.get("/casbin/roles", tags=["Authorization"])
+@router.get("/roles", tags=["Authorization"])
 def get_roles(valid: Annotated[TokenValidator, Depends(TokenValidator)]):
     """Returns the roles assigned to a user.
 
