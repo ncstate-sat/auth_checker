@@ -53,18 +53,18 @@ def test_authenticate_pass(patch_google_oauth, patch_authorizer, account):
     assert account["name"] == "Test User"
     assert account["email"] == "user@example.com"
     assert account["client_email"] is None
-    assert response.json()["roles"][0] == "tester"
+    assert account["roles"] == ["tester"]
 
 
 def test_authenticate_fail(patch_google_oauth, patch_authorizer):
     patch_google_oauth(authenticate=False)
     response = client.post("/auth/token", json={"token": "dummytoken", "authn_type": 1})
     assert response.status_code == 401
-    assert "Your login could not be authenticated." in response.json()["message"]
+    assert "Your login could not be authenticated." in response.json()["detail"]
 
 
 def test_refresh_token(user_to_token):
-    response = client.post("/auth/token/refresh", headers={"Bearer": f"{user_to_token()}"})
+    response = client.post("/auth/token/refresh", json={"token": user_to_token(), "authn_type": 1})
     assert response.status_code == 200
     assert "refresh_token" in response.json()
     account = response.json()["account"]
