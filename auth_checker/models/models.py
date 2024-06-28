@@ -154,6 +154,8 @@ class TokenValidator:
                 raise HTTPException(401, detail="Token is missing")
         elif x_token:
             self.token = x_token
+        if not self.token:
+            raise HTTPException(401, detail="Token is missing")
         self.account = None
         self._validate()
 

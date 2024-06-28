@@ -71,3 +71,27 @@ def test_refresh_token(user_to_token):
     assert account["name"] == "Test User"
     assert account["email"] == "user@example.com"
     assert account["client_email"] is None
+
+
+def test_token_validation_w_bearer_token(user_to_token):
+    response = client.post(
+        "/auth/token/refresh", headers={"Authorization": f"Bearer {user_to_token()}"}
+    )
+    assert response.status_code == 200
+    assert "refresh_token" in response.json()
+
+
+def test_token_validation_w_x_token(user_to_token):
+    response = client.post("/auth/token/refresh", headers={"X-Token": user_to_token()})
+    assert response.status_code == 200
+    assert "refresh_token" in response.json()
+
+
+def test_token_validation_w_bearer_no_token(user_to_token):
+    response = client.post("/auth/token/refresh", headers={"Authorization": "Bearer"})
+    assert response.status_code == 401
+
+
+def test_token_validation_no_token(user_to_token):
+    response = client.post("/auth/token/refresh", json={"token": "", "authn_type": 1})
+    assert response.status_code == 401
