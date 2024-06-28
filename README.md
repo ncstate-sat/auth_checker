@@ -40,6 +40,13 @@ At this time this library provides a primary authorization plugin (`casbin_pl`) 
 There is a `satauth_pl` plugin that is provided, but it is primarily meant as a demo port of the original
 `Authorization Service`.  It can be used as a reference for creating your own plugins.
 
+### Routes
+
+The library provides two fastapi routes for authorization:
+
+* `/casbin` The root route provides casbin enforcer authorization route.
+* `/casbin/roles` The roles route provides casbin enforcer roles route for the user.
+
 ### Usage
 
 ```python

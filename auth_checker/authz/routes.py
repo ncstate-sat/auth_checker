@@ -1,15 +1,15 @@
 from typing import Annotated
 from fastapi import APIRouter, status, Depends, HTTPException
-from auth_checker.models.models import TokenAuthorizer
+from auth_checker.models.models import TokenValidator
 from auth_checker.authz.authorizer import Authorizer
 
 router = APIRouter()
 authz = Authorizer()
 
 
-@router.get("/", tags=["Authorization"])
+@router.get("/casbin", tags=["Authorization"])
 def authorize(
-    resource: str, action: str, valid: Annotated[TokenAuthorizer, Depends(TokenAuthorizer)]
+    resource: str, action: str, valid: Annotated[TokenValidator, Depends(TokenValidator)]
 ):
     """Authorizes a user to perform an action on a resource. Auth service uses CASBIN for authorization.
 
@@ -31,8 +31,8 @@ def authorize(
         )
 
 
-@router.get("/roles", tags=["Authorization"])
-def get_roles(valid: Annotated[TokenAuthorizer, Depends(TokenAuthorizer)]):
+@router.get("/casbin/roles", tags=["Authorization"])
+def get_roles(valid: Annotated[TokenValidator, Depends(TokenValidator)]):
     """Returns the roles assigned to a user.
 
     :param valid: The token validator dependency. Contains the user's account information.
