@@ -6,7 +6,7 @@ from auth_checker.models.models import (
     _encode_jwt,
 )
 from auth_checker.util.authn_types import AuthNTypes
-from auth_checker.util.exceptions import HTTPException
+from fastapi.exceptions import HTTPException
 
 
 def test_errors_no_client_id(mocker, user_token_request_body):

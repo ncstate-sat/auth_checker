@@ -1,5 +1,6 @@
-from typing import Mapping, Union, Annotated
-from fastapi import Header
+from typing import Mapping, Annotated, Union
+from fastapi import Header, Depends
+from fastapi.exceptions import HTTPException
 import requests
 from google.auth import jwt
 import jwt as jot
@@ -12,22 +13,18 @@ from auth_checker.util.settings import (
     JWT_SECRET,
     GOOGLE_CLIENT_ID,
     JWT_ALGORITHM,
-    ACCOUNT_TOKEN_EXP_TIME,
-    SERVICE_TOKEN_EXP_TIME,
-    REFRESH_TOKEN_EXP_TIME,
+    ACCOUNT_TOKEN_EXP_TIME as TOKEN_EXP_TIME,
+    SERVICE_TOKEN_EXP_TIME as SERVICE_EXP_TIME,
+    REFRESH_TOKEN_EXP_TIME as REFRESH_EXP_TIME,
 )
 
 from auth_checker.util.authn_types import AuthNTypes
-from auth_checker.util.exceptions import HTTPException
 from sat.logs import SATLogger
 from pydantic import BaseModel
 
 logger = SATLogger(__name__)
 
-
-TOKEN_EXP_TIME = timedelta(minutes=ACCOUNT_TOKEN_EXP_TIME)
-SERVICE_EXP_TIME = timedelta(hours=SERVICE_TOKEN_EXP_TIME)
-REFRESH_EXP_TIME = timedelta(days=REFRESH_TOKEN_EXP_TIME)
+TOKEN_HEADER_ANNOTATION = Annotated[Union[str, None], Header()]
 
 
 class AuthnTokenRequestBody(BaseModel):
@@ -116,6 +113,7 @@ class Account:
     name = None
     email = None
     client_email = None
+    roles = []
 
     def __init__(self, config: Mapping[str, str]):
         for k, v in config.items():
@@ -123,12 +121,39 @@ class Account:
                 setattr(self, k, v)
 
     def render(self):
-        return {"name": self.name, "email": self.email, "client_email": self.client_email}
+        return {
+            "name": self.name,
+            "email": self.email,
+            "client_email": self.client_email,
+            "roles": self.roles,
+        }
 
 
 class TokenValidator:
-    def __init__(self, bearer: Annotated[Union[str, None], Header()] = None):
-        self.token = bearer
+    def __init__(
+        self,
+        body: AuthnTokenRequestBody = None,
+        authorization: TOKEN_HEADER_ANNOTATION = None,
+        x_token: TOKEN_HEADER_ANNOTATION = None,
+    ):
+        """
+        :param body: Captures POST data
+        :param bearer: Captures the Authorization key in the HTTP Header. Populated in GET requests.
+            Should be sent in the format:
+                Authorization: Bearer <STR>
+        :param x_token: This is a custom header that can be used to pass a token. Added primarily for Swagger docs testing.
+            Should be in the format:
+                X-Token: Bearer <STR>
+        """
+        if body:
+            self.token = body.token
+        elif authorization:
+            try:
+                self.token = authorization.split(" ")[1]
+            except IndexError:
+                raise HTTPException(401, detail="Token is missing")
+        elif x_token:
+            self.token = x_token
         self.account = None
         self._validate()
 
@@ -149,6 +174,20 @@ class TokenValidator:
             )
 
 
+class TokenAuthorizer:
+    def __init__(self, roles: list[str]):
+        self.authorized_roles = roles
+
+    def __call__(self, token: Annotated[TokenValidator, Depends(TokenValidator)]):
+        if not token.account:
+            raise HTTPException(401, detail="No account can be found in the token")
+        if not token.account.roles:
+            raise HTTPException(401, detail="User has no roles")
+        if not any(role in self.authorized_roles for role in token.account.roles):
+            raise HTTPException(403, detail="User is not authorized to perform this action")
+        return True
+
+
 def _encode_jwt(payload: dict, secret: str, algorithm: str) -> str:
     try:
         return jot.encode(payload, secret, algorithm)
@@ -158,12 +197,13 @@ def _encode_jwt(payload: dict, secret: str, algorithm: str) -> str:
         raise HTTPException(500, detail=f"An unknown error has occurred: {e}")
 
 
-def get_refresh_token(account: Account, refresh: timedelta = REFRESH_EXP_TIME):
-    """Generates a refresh JWT given an email address.
+def get_token(account: Account, expiry: timedelta = REFRESH_EXP_TIME):
+    """Generates a JWT given an email address, with a given duration. The default is 2 days, for
+    a refresh token.
     :param account: An Account object.
-    :param refresh: A refresh expiry expressed as a timedelta. Defaults to 2 days.
+    :param expiry: An expiry expressed as a timedelta. Defaults to 2 days.
     """
-    payload = {"email": account.email, "exp": datetime.now(tz=timezone.utc) + refresh}
+    payload = {"account": account.render(), "exp": datetime.now(tz=timezone.utc) + expiry}
     return _encode_jwt(payload, JWT_SECRET, JWT_ALGORITHM)
 
 

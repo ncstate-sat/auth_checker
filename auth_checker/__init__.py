@@ -20,5 +20,3 @@ discovered_plugins = {
     name: importlib.import_module(name)
     for finder, name, ispkg in iter_namespace(auth_checker.plugins.authorize)
 }
-
-authorizer = Authorizer()
