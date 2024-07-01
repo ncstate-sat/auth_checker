@@ -10,6 +10,7 @@ update-requirements:
 install-dev:
 	@echo 'Installing pip-tools...'
 	export PIP_REQUIRE_VIRTUALENV=true; \
+	pip install --upgrade pip
 	pip install -U -q pip-tools
 	@echo 'Installing requirements...'
 	pip-sync requirements/base/base.txt requirements/dev/dev.txt
@@ -20,4 +21,5 @@ lab:
 
 setup:
 	@echo 'Setting up the environment...'
+	pip install --upgrade pip
 	make install-dev
