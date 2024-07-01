@@ -123,3 +123,6 @@ skips = ["B101", "B601"]
 GOOGLE_CLIENT_ID = "google_client_id"
 JWT_SECRET = "jwt_secret"
 JWT_ALGORITHM = "HS256"
+AUTHORIZER = "casbin_authorizer"
+CASBIN_AUTHORIZER_POLICY_ADAPTER = "file"
+CASBIN_POLICY_FILE = "auth_checker/tests/test_policy.csv"
