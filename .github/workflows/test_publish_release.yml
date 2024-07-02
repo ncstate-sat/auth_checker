@@ -13,7 +13,7 @@ env:
     RELEASE_REPO: https://github.com/ncstate-sat/auth_checker
     SLACK_UPDATES: true
     # sends notifications to the acslib slack channel
-    SLACK_CHANNEL_ID: ${{ secrets.ACSLIB_CHANNEL_ID }}
+    SLACK_CHANNEL_ID: ${{ secrets.AUTH_CHECKER_CHANNEL_ID }}
     FLIT_USERNAME: __token__
     FLIT_PASSWORD: ${{ secrets.PYPI_TOKEN }}
 

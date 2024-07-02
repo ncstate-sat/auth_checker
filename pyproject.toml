@@ -8,10 +8,11 @@ build-backend = "flit_core.buildapi"
 
 [project]
 name = "auth-checker"
-version = "1.1.1"
+version = "2.0.0"
 authors = [
   { name="Ryan Semmler", email="rsemmle@ncsu.edu" },
   { name="Luc Sanchez", email="lgsanche@ncsu.edu" },
+  { name="Jeremy Gibson", email="jmgibso3@ncsu.edu"},
 ]
 description = "Contains the AuthChecker class for apps using the Auth Service"
 readme = "README.md"
@@ -25,15 +26,21 @@ classifiers = [
 ]
 
 dependencies = [
-  "fastapi==0.110.2",
-  "pyjwt==2.8.0"
+    "fastapi==0.110.2",
+    "pyjwt==2.8.0",
+    "casbin==1.36.0",
+    "google-auth==2.19.1",
+    "casbin_redis_adapter==1.2.0",
+    "casbin_pymongo_adapter==1.1.0",
+    "sat-utils==1.4.3",
 ]
 
 [project.optional-dependencies]
 dev = [
-    "pytest>=6.2.5, <7.0.0",
-    "pytest-cov>=4.0.0, <5.0.0",
-    "pytest-mock>=3.10.0, <4.0.0",
+    "pytest==8.2.2",
+    "pytest-cov==4.1.0",
+    "pytest-mock>=3.14.0, <4.0.0",
+    "pytest-env>=1.1.3, <1.2.0",
     "coverage[toml]>=6.2",
     "black>=23.3.0, <24.0.0",
     "ruff==0.1.1",
@@ -44,6 +51,7 @@ dev = [
     "pyupgrade>=2.29.1, <3.0.0",
     "flit>=3.8.0, <4.0.0",
     "httpx>=0.27.0, <1.0.0",
+    "jupyterlab>=4.1.5, <5.0.0",
 ]
 
 [project.urls]
@@ -110,3 +118,11 @@ max-complexity = 10
 [tool.bandit]
 exclude_dirs = ["tests", "auth_checker/tests"]
 skips = ["B101", "B601"]
+
+[tool.pytest_env]
+GOOGLE_CLIENT_ID = "google_client_id"
+JWT_SECRET = "jwt_secret"
+JWT_ALGORITHM = "HS256"
+AUTHORIZER = "casbin_authorizer"
+CASBIN_AUTHORIZER_POLICY_ADAPTER = "file"
+CASBIN_POLICY_FILE = "auth_checker/tests/test_policy.csv"
