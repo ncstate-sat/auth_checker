@@ -1,9 +1,6 @@
 layout pyenv 3.10.4
 
 export AUTHORIZER=casbin_authorizer
-# If you need a specific model file, you can set it here
-# Default is rbac and is defined in code auth_checker/util/settings
-# export CASBIN_AUTHORIZER_MODEL=rbac_model.conf
 
 # MONGO
 export CASBIN_AUTH_URI=mongodb://<MONGO_USER>:<MONGO_PASSWORD>@<MONGO_HOST>/?authSource=Accounts
