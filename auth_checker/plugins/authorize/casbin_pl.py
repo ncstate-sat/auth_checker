@@ -63,12 +63,11 @@ class CasbinAuthorizer(BaseAuthorizer):
         adapter = kwargs.get("adapter", ADAPTER_MAP[CASBIN_AUTHORIZER_POLICY_ADAPTER]())
         self.enforcer = casbin.Enforcer(model=model, adapter=adapter, enable_log=False)
 
-    def authorize(self, *args, **kwargs) -> bool:
+    def authorize(self, *args) -> bool:
         """
         Authorize a user to perform an action on an object
         kwargs are not supported for casbin authorize
         :param args:
-        :param kwargs:
         :return:
         """
         if args:
@@ -76,7 +75,7 @@ class CasbinAuthorizer(BaseAuthorizer):
             return self.enforcer.enforce(subject, _object, action)
         return False
 
-    def roles_for_user(self, *args, **kwargs) -> list[str]:
+    def roles_for_user(self, *args) -> list[str]:
         if args:
             subject = args[0]
             return self.enforcer.get_roles_for_user(subject)
