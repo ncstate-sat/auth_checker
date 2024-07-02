@@ -23,3 +23,6 @@ coverage.xml
 
 # repo pulled in for CI/CD
 actions/
+
+# Jupyter Notebook
+.ipynb_checkpoints
