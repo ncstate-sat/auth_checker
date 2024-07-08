@@ -1,0 +1,3 @@
+DEV_ROLES = ["dev"]
+ADMIN_ROLES = ["admin"] + DEV_ROLES
+READ_WRITE_ROLES = ["staff"] + ADMIN_ROLES

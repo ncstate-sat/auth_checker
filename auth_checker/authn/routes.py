@@ -5,11 +5,12 @@ from auth_checker.models.models import (
     get_authn_token,
     get_token,
     TokenValidator,
+    RefreshTokenValidator,
 )
 from fastapi import HTTPException
 from auth_checker.authz.authorizer import Authorizer
 from auth_checker.util.settings import ACCOUNT_TOKEN_EXP_TIME
-from fastapi import APIRouter, Response, status
+from fastapi import APIRouter, status
 from fastapi import Depends
 
 
@@ -47,7 +48,7 @@ def authenticate(authn: Annotated[GoogleJWTAuthenticator, Depends(GoogleJWTAuthe
 
 
 @router.post("/token/refresh", tags=["Authentication"])
-def refresh_token(token: Annotated[TokenValidator, Depends(TokenValidator)]):
+def refresh_token(token: Annotated[RefreshTokenValidator, Depends(RefreshTokenValidator)]):
     """Returns a new token and refresh token.
 
     The JWT used for authentication expires 15 minutes after it's generated.

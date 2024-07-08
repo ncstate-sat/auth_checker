@@ -34,7 +34,7 @@ class AuthnTokenRequestBody(BaseModel):
     """
 
     token: str
-    authn_type: AuthNTypes
+    authn_type: AuthNTypes = AuthNTypes.OAUTH2
 
 
 class Authenticator:
@@ -129,10 +129,41 @@ class Account:
         }
 
 
-class TokenValidator:
+class BaseTokenValidator:
+    def __init__(self, *args, **kwargs):
+        self.account = None
+        self.token = None
+
+    def _validate(self) -> bool:
+        """
+        Validates a JSON Web Token for this app.
+        :returns tuple: (bool, Account)
+        """
+        if not self.token:
+            raise HTTPException(401, detail="Token is missing")
+        try:
+            if token_map := jot.decode(self.token, JWT_SECRET, algorithms=[JWT_ALGORITHM]):
+                self.account = Account(token_map)
+                return True
+        except jot.exceptions.ExpiredSignatureError:
+            raise HTTPException(401, detail="Token is expired")
+        except jot.exceptions.InvalidSignatureError:
+            raise HTTPException(
+                400, detail="Token has an invalid signature. Check the JWT_SECRET variable."
+            )
+
+
+class RefreshTokenValidator(BaseTokenValidator):
+    def __init__(self, body: AuthnTokenRequestBody):
+        super().__init__()
+        if body:
+            self.token = body.token
+        self._validate()
+
+
+class TokenValidator(BaseTokenValidator):
     def __init__(
         self,
-        body: AuthnTokenRequestBody = None,
         authorization: TOKEN_HEADER_ANNOTATION = None,
         x_token: TOKEN_HEADER_ANNOTATION = None,
     ):
@@ -145,9 +176,8 @@ class TokenValidator:
             Should be in the format:
                 X-Token: Bearer <STR>
         """
-        if body:
-            self.token = body.token
-        elif authorization:
+        super().__init__()
+        if authorization:
             try:
                 self.token = authorization.split(" ")[1]
             except IndexError:
@@ -158,22 +188,6 @@ class TokenValidator:
             raise HTTPException(401, detail="Token is missing")
         self.account = None
         self._validate()
-
-    def _validate(self) -> bool:
-        """
-        Validates a JSON Web Token for this app.
-        :returns tuple: (bool, Account)
-        """
-        try:
-            if token_map := jot.decode(self.token, JWT_SECRET, algorithms=[JWT_ALGORITHM]):
-                self.account = Account(token_map)
-                return True
-        except jot.exceptions.ExpiredSignatureError:
-            raise HTTPException(401, detail="Token is expired")
-        except jot.exceptions.InvalidSignatureError:
-            raise HTTPException(
-                400, detail="Token has an invalid signature. Check the JWT_SECRET variable."
-            )
 
 
 class TokenAuthorizer:
