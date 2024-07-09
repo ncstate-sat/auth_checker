@@ -25,8 +25,14 @@ def account():
 
 @pytest.fixture
 def user_to_token(account):
-    def _user_to_token(expires=DATE_IN_FUTURE, signature=JWT_SECRET, algo=JWT_ALGORITHM):
-        acct = account().render()
+    def _user_to_token(
+        expires=DATE_IN_FUTURE, signature=JWT_SECRET, algo=JWT_ALGORITHM, refresh=False
+    ):
+        acct = {}
+        if refresh:
+            acct["account"] = account().render()
+        else:
+            acct = account().render()
         acct["exp"] = expires
         return jwt.encode(acct, signature, algorithm=algo)
 
@@ -42,7 +48,7 @@ def service_to_token(account):
 
 @pytest.fixture
 def user_token_request_body(user_to_token):
-    return AuthnTokenRequestBody(token=user_to_token())
+    return AuthnTokenRequestBody(token=user_to_token(refresh=True))
 
 
 @pytest.fixture
