@@ -64,7 +64,9 @@ def test_authenticate_fail(patch_google_oauth, patch_authorizer):
 
 
 def test_refresh_token(user_to_token):
-    response = client.post("/auth/token/refresh", json={"token": user_to_token(), "authn_type": 1})
+    response = client.post(
+        "/auth/token/refresh", json={"token": user_to_token(refresh=True), "authn_type": 1}
+    )
     assert response.status_code == 200
     assert "refresh_token" in response.json()
     account = response.json()["account"]
@@ -74,7 +76,7 @@ def test_refresh_token(user_to_token):
 
 
 def test_token_validation_token_no_type(user_to_token):
-    response = client.post("/auth/token/refresh", json={"token": user_to_token()})
+    response = client.post("/auth/token/refresh", json={"token": user_to_token(refresh=True)})
     assert response.status_code == 200
     assert "refresh_token" in response.json()
 
