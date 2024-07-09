@@ -4,7 +4,6 @@ from auth_checker.models.models import (
     GoogleJWTAuthenticator,
     get_authn_token,
     get_token,
-    TokenValidator,
     RefreshTokenValidator,
 )
 from fastapi import HTTPException

@@ -140,7 +140,7 @@ class BaseTokenValidator:
         :returns tuple: (bool, Account)
         """
         if not self.token:
-            raise HTTPException(401, detail="Token is missing")
+            raise HTTPException(401, detail="Token is missing.")
         try:
             if token_map := jot.decode(self.token, JWT_SECRET, algorithms=[JWT_ALGORITHM]):
                 self.account = Account(token_map)
@@ -156,9 +156,11 @@ class BaseTokenValidator:
 class RefreshTokenValidator(BaseTokenValidator):
     def __init__(self, body: AuthnTokenRequestBody):
         super().__init__()
-        if body:
-            self.token = body.token
-        self._validate()
+        if token := body.token:
+            self.token = token
+            self._validate()
+        else:
+            raise HTTPException(401, detail="Token is missing")
 
 
 class TokenValidator(BaseTokenValidator):
@@ -168,8 +170,7 @@ class TokenValidator(BaseTokenValidator):
         x_token: TOKEN_HEADER_ANNOTATION = None,
     ):
         """
-        :param body: Captures POST data
-        :param bearer: Captures the Authorization key in the HTTP Header. Populated in GET requests.
+        :param authorization: Captures the Authorization key in the HTTP Header. Populated in GET requests.
             Should be sent in the format:
                 Authorization: Bearer <STR>
         :param x_token: This is a custom header that can be used to pass a token. Added primarily for Swagger docs testing.
