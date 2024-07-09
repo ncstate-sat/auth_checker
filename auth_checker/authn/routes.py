@@ -28,7 +28,7 @@ def authenticate(authn: Annotated[GoogleJWTAuthenticator, Depends(GoogleJWTAuthe
     """
     try:
         if authn.authenticate():
-            authn.account.roles = authz.roles_for_user(authn.account.email)
+            authn.account.roles = authz.roles_for_user(authn.account.get_email)
             return {
                 "token": get_authn_token(authn.account, authn.auth_type),
                 "refresh_token": get_token(authn.account),
