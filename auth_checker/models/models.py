@@ -129,6 +129,13 @@ class Account:
             "roles": self.roles,
         }
 
+    @property
+    def get_email(self):
+        if self.email:
+            return self.email
+        if self.client_email:
+            return self.client_email
+
 
 class BaseTokenValidator:
     def __init__(self, *args, **kwargs):
