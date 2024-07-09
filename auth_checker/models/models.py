@@ -20,7 +20,8 @@ from auth_checker.util.settings import (
 
 from auth_checker.util.authn_types import AuthNTypes
 from sat.logs import SATLogger
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+
 
 logger = SATLogger(__name__)
 
@@ -34,7 +35,7 @@ class AuthnTokenRequestBody(BaseModel):
     """
 
     token: str
-    authn_type: AuthNTypes = AuthNTypes.OAUTH2
+    authn_type: int = Field(default=AuthNTypes.OAUTH2.value)
 
 
 class Authenticator:
@@ -101,9 +102,9 @@ class GoogleJWTAuthenticator(Authenticator):
             )
 
     def authenticate(self) -> bool:
-        if self.auth_type == AuthNTypes.OAUTH2:
+        if self.auth_type == AuthNTypes.OAUTH2.value:
             return self._oauth2()
-        if self.auth_type == AuthNTypes.X509:
+        if self.auth_type == AuthNTypes.X509.value:
             return self._x509()
 
 

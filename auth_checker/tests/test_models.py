@@ -1,7 +1,6 @@
 import pytest
 from auth_checker.models.models import (
     GoogleJWTAuthenticator,
-    TokenValidator,
     get_authn_token,
     _encode_jwt,
 )
@@ -17,11 +16,12 @@ def test_errors_no_client_id(mocker, user_token_request_body):
     assert "Google Client ID is not set" in str(e.value)
 
 
-def test_errors_oauth2_value_error(user_token_request_body):
-    with pytest.raises(HTTPException) as e:
-        GoogleJWTAuthenticator(user_token_request_body).authenticate()
-    val = e.value
-    assert val.status_code == 500
+def test_oauth2_default_value(mocker, user_token_request_body):
+    mocked = mocker.patch(
+        "auth_checker.models.models.GoogleJWTAuthenticator._oauth2", return_value=True
+    )
+    GoogleJWTAuthenticator(user_token_request_body).authenticate()
+    mocked.assert_called_once()
 
 
 def test_x509_is_called(mocker, service_token_request_body):
