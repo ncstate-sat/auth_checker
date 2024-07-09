@@ -42,7 +42,7 @@ def service_to_token(account):
 
 @pytest.fixture
 def user_token_request_body(user_to_token):
-    return AuthnTokenRequestBody(token=user_to_token(), authn_type=1)
+    return AuthnTokenRequestBody(token=user_to_token())
 
 
 @pytest.fixture

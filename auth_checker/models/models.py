@@ -20,7 +20,8 @@ from auth_checker.util.settings import (
 
 from auth_checker.util.authn_types import AuthNTypes
 from sat.logs import SATLogger
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+
 
 logger = SATLogger(__name__)
 
@@ -34,7 +35,7 @@ class AuthnTokenRequestBody(BaseModel):
     """
 
     token: str
-    authn_type: AuthNTypes
+    authn_type: int = Field(default=AuthNTypes.OAUTH2.value)
 
 
 class Authenticator:
@@ -101,9 +102,9 @@ class GoogleJWTAuthenticator(Authenticator):
             )
 
     def authenticate(self) -> bool:
-        if self.auth_type == AuthNTypes.OAUTH2:
+        if self.auth_type == AuthNTypes.OAUTH2.value:
             return self._oauth2()
-        if self.auth_type == AuthNTypes.X509:
+        if self.auth_type == AuthNTypes.X509.value:
             return self._x509()
 
 
@@ -129,41 +130,18 @@ class Account:
         }
 
 
-class TokenValidator:
-    def __init__(
-        self,
-        body: AuthnTokenRequestBody = None,
-        authorization: TOKEN_HEADER_ANNOTATION = None,
-        x_token: TOKEN_HEADER_ANNOTATION = None,
-    ):
-        """
-        :param body: Captures POST data
-        :param bearer: Captures the Authorization key in the HTTP Header. Populated in GET requests.
-            Should be sent in the format:
-                Authorization: Bearer <STR>
-        :param x_token: This is a custom header that can be used to pass a token. Added primarily for Swagger docs testing.
-            Should be in the format:
-                X-Token: Bearer <STR>
-        """
-        if body:
-            self.token = body.token
-        elif authorization:
-            try:
-                self.token = authorization.split(" ")[1]
-            except IndexError:
-                raise HTTPException(401, detail="Token is missing")
-        elif x_token:
-            self.token = x_token
-        if not self.token:
-            raise HTTPException(401, detail="Token is missing")
+class BaseTokenValidator:
+    def __init__(self, *args, **kwargs):
         self.account = None
-        self._validate()
+        self.token = None
 
     def _validate(self) -> bool:
         """
         Validates a JSON Web Token for this app.
         :returns tuple: (bool, Account)
         """
+        if not self.token:
+            raise HTTPException(401, detail="Token is missing.")
         try:
             if token_map := jot.decode(self.token, JWT_SECRET, algorithms=[JWT_ALGORITHM]):
                 self.account = Account(token_map)
@@ -174,6 +152,44 @@ class TokenValidator:
             raise HTTPException(
                 400, detail="Token has an invalid signature. Check the JWT_SECRET variable."
             )
+
+
+class RefreshTokenValidator(BaseTokenValidator):
+    def __init__(self, body: AuthnTokenRequestBody):
+        super().__init__()
+        if token := body.token:
+            self.token = token
+            self._validate()
+        else:
+            raise HTTPException(401, detail="Token is missing")
+
+
+class TokenValidator(BaseTokenValidator):
+    def __init__(
+        self,
+        authorization: TOKEN_HEADER_ANNOTATION = None,
+        x_token: TOKEN_HEADER_ANNOTATION = None,
+    ):
+        """
+        :param authorization: Captures the Authorization key in the HTTP Header. Populated in GET requests.
+            Should be sent in the format:
+                Authorization: Bearer <STR>
+        :param x_token: This is a custom header that can be used to pass a token. Added primarily for Swagger docs testing.
+            Should be in the format:
+                X-Token: Bearer <STR>
+        """
+        super().__init__()
+        if authorization:
+            try:
+                self.token = authorization.split(" ")[1]
+            except IndexError:
+                raise HTTPException(401, detail="Token is missing")
+        elif x_token:
+            self.token = x_token
+        if not self.token:
+            raise HTTPException(401, detail="Token is missing")
+        self.account = None
+        self._validate()
 
 
 class TokenAuthorizer:

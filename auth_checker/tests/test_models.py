@@ -1,13 +1,12 @@
 import pytest
 from auth_checker.models.models import (
     GoogleJWTAuthenticator,
-    TokenValidator,
     get_authn_token,
     _encode_jwt,
 )
 from auth_checker.util.authn_types import AuthNTypes
 from fastapi.exceptions import HTTPException
-from auth_checker.models.models import AuthnTokenRequestBody
+from auth_checker.models.models import AuthnTokenRequestBody, RefreshTokenValidator
 
 
 def test_errors_no_client_id(mocker, user_token_request_body):
@@ -17,11 +16,12 @@ def test_errors_no_client_id(mocker, user_token_request_body):
     assert "Google Client ID is not set" in str(e.value)
 
 
-def test_errors_oauth2_value_error(user_token_request_body):
-    with pytest.raises(HTTPException) as e:
-        GoogleJWTAuthenticator(user_token_request_body).authenticate()
-    val = e.value
-    assert val.status_code == 500
+def test_oauth2_default_value(mocker, user_token_request_body):
+    mocked = mocker.patch(
+        "auth_checker.models.models.GoogleJWTAuthenticator._oauth2", return_value=True
+    )
+    GoogleJWTAuthenticator(user_token_request_body).authenticate()
+    mocked.assert_called_once()
 
 
 def test_x509_is_called(mocker, service_token_request_body):
@@ -36,7 +36,7 @@ def test_x509_is_called(mocker, service_token_request_body):
 
 
 def test_token_validator_valid(user_token_request_body):
-    token_validator = TokenValidator(user_token_request_body)
+    token_validator = RefreshTokenValidator(user_token_request_body)
     assert token_validator
     assert token_validator.account
     assert token_validator.account.name == "Test User"
@@ -45,7 +45,7 @@ def test_token_validator_valid(user_token_request_body):
 def test_token_validator_invalid_expired(user_to_token):
     with pytest.raises(HTTPException) as e:
         utoken = user_to_token(expires=0)
-        TokenValidator(AuthnTokenRequestBody(token=utoken, authn_type=AuthNTypes.OAUTH2))
+        RefreshTokenValidator(AuthnTokenRequestBody(token=utoken, authn_type=AuthNTypes.OAUTH2))
     assert e.value.status_code == 401
     assert "Token is expired" in e.value.detail
 
@@ -53,7 +53,7 @@ def test_token_validator_invalid_expired(user_to_token):
 def test_token_validator_invalid_bad_signature(user_to_token):
     with pytest.raises(HTTPException) as e:
         utoken = user_to_token(signature="badsecret")
-        TokenValidator(AuthnTokenRequestBody(token=utoken, authn_type=AuthNTypes.OAUTH2))
+        RefreshTokenValidator(AuthnTokenRequestBody(token=utoken, authn_type=AuthNTypes.OAUTH2))
     assert e.value.status_code == 400
     assert "Token has an invalid signature. Check the JWT_SECRET variable." in e.value.detail
 
