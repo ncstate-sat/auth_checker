@@ -207,6 +207,7 @@ class TokenValidator(BaseTokenValidator):
 class TokenAuthorizer:
     def __init__(self, roles: list[str]):
         self.authorized_roles = roles
+        self.token = None
 
     def __call__(self, token: Annotated[TokenValidator, Depends(TokenValidator)]):
         if not token.account:
@@ -215,7 +216,8 @@ class TokenAuthorizer:
             raise HTTPException(401, detail="User has no roles")
         if not any(role in self.authorized_roles for role in token.account.roles):
             raise HTTPException(403, detail="User is not authorized to perform this action")
-        return True
+        self.token = token.token
+        return self
 
 
 def _encode_jwt(payload: dict, secret: str, algorithm: str) -> str:
