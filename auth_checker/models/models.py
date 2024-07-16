@@ -151,6 +151,7 @@ class BaseTokenValidator:
             raise HTTPException(401, detail="Token is missing.")
         try:
             if token_map := jot.decode(self.token, JWT_SECRET, algorithms=[JWT_ALGORITHM]):
+                logger.debug(f"Token map: {token_map}")
                 if account := token_map.get("account"):
                     self.account = Account(account)
                 else:
