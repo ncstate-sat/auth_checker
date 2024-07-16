@@ -29,6 +29,7 @@ def authenticate(authn: Annotated[GoogleJWTAuthenticator, Depends(GoogleJWTAuthe
 
     :returns: A new token, refresh token, and account information.
     """
+    authz.enforcer.load_policy()
     try:
         if authn.authenticate():
             authn.account.roles = authz.roles_for_user(authn.account.get_email)
@@ -59,7 +60,8 @@ def refresh_token(token: Annotated[RefreshTokenValidator, Depends(RefreshTokenVa
 
     :returns: A new long-lived token, a new short-lived token, and plain text account information.
     """
-    logger.debug(f"Token refresh request for {token.account}")
+    authz.enforcer.load_policy()
+    logger.debug(f"Token refresh request for {token.account.render()}")
     token.account.roles = authz.roles_for_user(token.account.email)
     logger.debug(f"Roles for {token.account.email}: {token.account.roles}")
     new_refresh_token = get_token(token.account)
