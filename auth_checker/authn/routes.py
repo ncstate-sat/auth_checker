@@ -11,6 +11,9 @@ from auth_checker.authz.authorizer import Authorizer
 from auth_checker.util.settings import ACCOUNT_TOKEN_EXP_TIME
 from fastapi import APIRouter, status
 from fastapi import Depends
+from sat.logs import SATLogger
+
+logger = SATLogger(__name__)
 
 
 router = APIRouter()
@@ -56,7 +59,9 @@ def refresh_token(token: Annotated[RefreshTokenValidator, Depends(RefreshTokenVa
 
     :returns: A new long-lived token, a new short-lived token, and plain text account information.
     """
+    logger.debug(f"Token refresh request for {token.account}")
     token.account.roles = authz.roles_for_user(token.account.email)
+    logger.debug(f"Roles for {token.account.email}: {token.account.roles}")
     new_refresh_token = get_token(token.account)
     new_token = get_token(token.account, expiry=ACCOUNT_TOKEN_EXP_TIME)
     return {
