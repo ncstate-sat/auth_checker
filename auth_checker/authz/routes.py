@@ -18,6 +18,7 @@ def authorize(
     :param valid: The token validator dependency. Contains the user's account information.
     :returns: A boolean indicating whether the user is authorized to perform the action.
     """
+    authz.enforcer.load_policy()
     try:
         if not authz.authorize(valid.account.email, resource, action):
             raise HTTPException(
@@ -38,6 +39,7 @@ def get_roles(valid: Annotated[TokenValidator, Depends(TokenValidator)]):
     :param valid: The token validator dependency. Contains the user's account information.
     :returns: A list of roles assigned to the user.
     """
+    authz.enforcer.load_policy()
     try:
         return {"roles": authz.roles_for_user(valid.account.email)}
     except AttributeError as ae:
