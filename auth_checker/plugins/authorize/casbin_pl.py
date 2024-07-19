@@ -78,7 +78,7 @@ class CasbinAuthorizer(BaseAuthorizer):
     def roles_for_user(self, *args) -> list[str]:
         if args:
             subject = args[0]
-            return self.enforcer.get_roles_for_user(subject)
+            return self.enforcer.get_implicit_roles_for_user(subject)
         return []
 
     def permissions_for_user(self, *args, **kwargs):
