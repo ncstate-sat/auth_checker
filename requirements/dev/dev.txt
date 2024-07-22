@@ -82,9 +82,13 @@ defusedxml==0.7.1
 distlib==0.3.8
     # via virtualenv
 dnspython==2.6.1
-    # via pymongo
+    # via
+    #   email-validator
+    #   pymongo
 docutils==0.21.2
     # via flit
+email-validator==2.2.0
+    # via pydantic
 executing==2.0.1
     # via stack-data
 fastapi==0.110.2
@@ -114,6 +118,7 @@ identify==2.5.36
 idna==3.7
     # via
     #   anyio
+    #   email-validator
     #   httpx
     #   jsonschema
     #   requests
@@ -263,9 +268,11 @@ pyasn1-modules==0.4.0
     # via google-auth
 pycparser==2.22
     # via cffi
-pydantic==2.7.4
-    # via fastapi
-pydantic-core==2.18.4
+pydantic[email]==2.6.4
+    # via
+    #   fastapi
+    #   sat-utils
+pydantic-core==2.16.3
     # via pydantic
 pygments==2.18.0
     # via
@@ -341,7 +348,7 @@ rsa==4.9
     # via google-auth
 ruff==0.1.1
     # via auth-checker (pyproject.toml)
-sat-utils==1.4.3
+sat-utils==1.5.0
     # via auth-checker (pyproject.toml)
 send2trash==1.8.3
     # via jupyter-server
