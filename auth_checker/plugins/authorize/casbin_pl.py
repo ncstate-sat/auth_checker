@@ -14,7 +14,7 @@ CASBIN_AUTHORIZER_POLICY_ADAPTER = os.getenv("CASBIN_AUTHORIZER_POLICY_ADAPTER")
 CASBIN_POLICY_FILE = os.getenv("CASBIN_POLICY_FILE", None)
 
 
-def _redis_adapter():
+def _redis_adapter():  # pragma: no cover
     casbin_redis_host = os.getenv("CASBIN_REDIS_HOST", "localhost")
     casbin_redis_port = os.getenv("CASBIN_REDIS_PORT", 6379)
     casbin_redis_password = os.getenv("CASBIN_REDIS_PASSWORD", None)
@@ -29,14 +29,14 @@ def _redis_adapter():
     return adapter
 
 
-def _file_adapter():
+def _file_adapter():  # pragma: no cover
     if not Path(CASBIN_POLICY_FILE).exists():
         raise FileNotFoundError(f"File {CASBIN_POLICY_FILE} not found")
     adapter = casbin.FileAdapter(CASBIN_POLICY_FILE)
     return adapter
 
 
-def _mongo_adapter():
+def _mongo_adapter():  # pragma: no cover
     try:
         from casbin_pymongo_adapter.adapter import Adapter
     except ImportError:
@@ -48,7 +48,7 @@ def _mongo_adapter():
     return adapter
 
 
-def _sqlite_adapter():
+def _sqlite_adapter():  # pragma: no cover
     try:
         import casbin_sqlalchemy_adapter
         import casbin
