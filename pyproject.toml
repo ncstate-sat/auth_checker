@@ -8,7 +8,7 @@ build-backend = "flit_core.buildapi"
 
 [project]
 name = "auth-checker"
-version = "2.0.10"
+version = "2.0.11"
 authors = [
   { name="Ryan Semmler", email="rsemmle@ncsu.edu" },
   { name="Luc Sanchez", email="lgsanche@ncsu.edu" },
@@ -52,6 +52,10 @@ dev = [
     "flit>=3.8.0, <4.0.0",
     "httpx>=0.27.0, <1.0.0",
     "jupyterlab>=4.1.5, <5.0.0",
+]
+
+casbin_sql = [
+    "casbin_sqlalchemy_adapter==1.4.0"
 ]
 
 [project.urls]
