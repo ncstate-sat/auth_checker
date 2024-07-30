@@ -48,10 +48,24 @@ def _mongo_adapter():
     return adapter
 
 
+def _sqlite_adapter():
+    try:
+        import casbin_sqlalchemy_adapter
+        import casbin
+    except ImportError as e:
+        raise ImportError(f"A dependency is not installed: {e}")
+    db_file = Path(os.getenv("CASBIN_SQLITE_DB_FILE", "./"))
+    if not db_file.exists():
+        db_file.touch()
+    adapter = casbin_sqlalchemy_adapter.Adapter(f"sqlite:///{db_file.absolute()}")
+    return adapter
+
+
 ADAPTER_MAP = {
     "redis": _redis_adapter,
     "mongo": _mongo_adapter,
     "file": _file_adapter,
+    "sqlite": _sqlite_adapter,
 }
 
 
