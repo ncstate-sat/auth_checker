@@ -9,13 +9,13 @@ on:
   workflow_dispatch:
 
 env:
-    REPO_NAME: auth_checker
-    RELEASE_REPO: https://github.com/ncstate-sat/auth_checker
-    SLACK_UPDATES: true
-    # sends notifications to the acslib slack channel
-    SLACK_CHANNEL_ID: ${{ secrets.AUTH_CHECKER_CHANNEL_ID }}
-    FLIT_USERNAME: __token__
-    FLIT_PASSWORD: ${{ secrets.PYPI_TOKEN }}
+  REPO_NAME: auth_checker
+  RELEASE_REPO: https://github.com/ncstate-sat/auth_checker
+  SLACK_UPDATES: true
+  # sends notifications to the acslib slack channel
+  SLACK_CHANNEL_ID: ${{ secrets.AUTH_CHECKER_CHANNEL_ID }}
+  FLIT_USERNAME: __token__
+  FLIT_PASSWORD: ${{ secrets.PYPI_TOKEN }}
 
 jobs:
   run_tests:
@@ -64,7 +64,7 @@ jobs:
           pytest
 
       - name: Send Failure Message on Slack if Tests Fail
-        if: ${{ failure() }}
+        if: ${{ failure() && github.event.pull_request.draft == false }}
         uses: ./actions/slack-updates
         with:
           channel-id: ${{ github.event.inputs.slack-channel-id || env.SLACK_CHANNEL_ID }}
@@ -74,6 +74,7 @@ jobs:
           SLACK_UPDATES: ${{ github.event.inputs.slack-updates || env.SLACK_UPDATES }}
 
       - name: Send Success Message on Slack
+        if: ${{ github.event.pull_request.draft == false }}
         uses: ./actions/slack-updates
         with:
           channel-id: ${{ github.event.inputs.slack-channel-id || env.SLACK_CHANNEL_ID }}
