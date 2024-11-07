@@ -8,8 +8,6 @@ annotated-types==0.7.0
     # via pydantic
 anyio==4.4.0
     # via starlette
-async-timeout==4.0.3
-    # via redis
 cachetools==5.3.3
     # via google-auth
 casbin==1.36.0
