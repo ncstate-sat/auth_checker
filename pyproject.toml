@@ -8,7 +8,7 @@ build-backend = "flit_core.buildapi"
 
 [project]
 name = "auth-checker"
-version = "2.0.12"
+version = "2.1.0"
 authors = [
   { name="Ryan Semmler", email="rsemmle@ncsu.edu" },
   { name="Luc Sanchez", email="lgsanche@ncsu.edu" },
@@ -32,7 +32,7 @@ dependencies = [
     "google-auth==2.19.1",
     "casbin_redis_adapter==1.2.0",
     "casbin_pymongo_adapter==1.1.0",
-    "sat-utils>=1.5.0, <2.0.0",
+    "sat-utils==1.7.0",
 ]
 
 [project.optional-dependencies]
