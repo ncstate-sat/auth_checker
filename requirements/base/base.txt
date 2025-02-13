@@ -78,7 +78,7 @@ requests-oauthlib==1.3.1
     # via sat-utils
 rsa==4.9
     # via google-auth
-sat-utils==1.5.0
+sat-utils==1.7.4
     # via auth-checker (pyproject.toml)
 simpleeval==0.9.13
     # via casbin
