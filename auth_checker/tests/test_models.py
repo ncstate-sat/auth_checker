@@ -61,7 +61,7 @@ def test_token_validator_invalid_bad_signature(user_to_token):
 def test_token_validator_invalid_decode_error(user_to_token):
     with pytest.raises(HTTPException) as e:
         RefreshTokenValidator(AuthnTokenRequestBody(token="null", authn_type=AuthNTypes.OAUTH2))
-    assert e.value.status_code == 400
+    assert e.value.status_code == 401
     assert "Token could not be decoded." in e.value.detail
 
 
