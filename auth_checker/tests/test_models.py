@@ -58,6 +58,13 @@ def test_token_validator_invalid_bad_signature(user_to_token):
     assert "Token has an invalid signature. Check the JWT_SECRET variable." in e.value.detail
 
 
+def test_token_validator_invalid_decode_error(user_to_token):
+    with pytest.raises(HTTPException) as e:
+        RefreshTokenValidator(AuthnTokenRequestBody(token="null", authn_type=AuthNTypes.OAUTH2))
+    assert e.value.status_code == 400
+    assert "Token could not be decoded." in e.value.detail
+
+
 def test_encode_jwt_x509(account):
     assert get_authn_token(account(), AuthNTypes.X509)
 
