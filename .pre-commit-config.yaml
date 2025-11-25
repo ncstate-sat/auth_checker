@@ -25,7 +25,7 @@ repos:
     hooks:
       - id: bandit
         args: ["-c", "pyproject.toml"]
-        additional_dependencies: ["pbr"]
+        additional_dependencies: ["pbr", "bandit[toml]"]
   - repo: https://github.com/charliermarsh/ruff-pre-commit
     rev: "v0.1.1"
     hooks:
