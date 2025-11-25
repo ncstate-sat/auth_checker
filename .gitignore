@@ -1,5 +1,6 @@
 dist/
 venv/
+env/
 __pycache__
 
 .envrc
