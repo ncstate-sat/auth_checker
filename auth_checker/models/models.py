@@ -165,6 +165,8 @@ class BaseTokenValidator:
             raise HTTPException(
                 400, detail="Token has an invalid signature. Check the JWT_SECRET variable."
             )
+        except jot.exceptions.DecodeError:
+            raise HTTPException(401, detail="Token could not be decoded.")
 
 
 class RefreshTokenValidator(BaseTokenValidator):
