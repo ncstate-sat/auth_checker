@@ -113,6 +113,13 @@ def test_invalid_signature_token():
     assert "Success" not in response.text
 
 
+def test_malformed_token():
+    """User can't access a route with a malformed (non-JWT) token"""
+    response = client.get("/normal-auth", headers={"Authorization": "Bearer not-a-real-jwt"})
+    assert response.status_code == 400
+    assert "Success" not in response.text
+
+
 def test_no_token_provided():
     """User should get a 401 if no token is provided."""
     response = client.get("/normal-auth", headers={"Authorization": ""})

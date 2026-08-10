@@ -35,7 +35,7 @@ class AuthChecker:
         :param str authorization_header: the request's Authorization header.
             The header value is a JWT.
         """
-        token = authorization_header.lstrip("Bearer").strip()
+        token = authorization_header.removeprefix("Bearer").strip()
         if not token:
             raise HTTPException(401, detail="No token provided in 'Authorization' header")
         try:
@@ -49,6 +49,8 @@ class AuthChecker:
             raise HTTPException(
                 400, detail=("Token has an invalid signature. " "Check the JWT_SECRET variable.")
             )
+        except jwt.exceptions.DecodeError:
+            raise HTTPException(400, detail="Token could not be decoded")
 
         user_permissions = payload.get("permissions", [])
         for required_permission in self.required_permissions:
