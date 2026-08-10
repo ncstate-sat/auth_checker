@@ -1,6 +1,8 @@
 """verify that AuthChecker allows and blocks the correct requests"""
 
 import os
+import time
+import jwt
 from fastapi import FastAPI, Depends
 from fastapi.testclient import TestClient
 from auth_checker.auth_checker import AuthChecker
@@ -9,116 +11,136 @@ from auth_checker.auth_checker import AuthChecker
 app_to_test = FastAPI()
 
 
-@app_to_test.get("/1", dependencies=[Depends(AuthChecker("auth1"))])
-def route1():
+@app_to_test.get("/normal-auth", dependencies=[Depends(AuthChecker("auth1:read"))])
+def normal_auth_route():
     """Requires an auth that the user has"""
     return "Success"
 
 
-@app_to_test.get("/12", dependencies=[Depends(AuthChecker("auth1", "auth2"))])
-def route12():
+@app_to_test.get("/multiple-auths", dependencies=[Depends(AuthChecker("auth1:read", "auth2:read"))])
+def multiple_auths_route():
     """Requires multiple auths"""
     return "Success"
 
 
-@app_to_test.get("/13", dependencies=[Depends(AuthChecker("auth1", "auth3"))])
-def route13():
-    """Requires an auth that's set to False"""
+@app_to_test.get(
+    "/not-enough-permissions", dependencies=[Depends(AuthChecker("auth1:read", "auth2:write"))]
+)
+def not_enough_permissions_route():
+    """Requires an auth that's not in the user's permissions"""
     return "Success"
 
 
-@app_to_test.get("/4", dependencies=[Depends(AuthChecker("auth4"))])
-def route4():
-    """Requires an auth that doesn't appear in the user's authorizations"""
+@app_to_test.get("/no-permissions", dependencies=[Depends(AuthChecker("auth3:read"))])
+def no_permissions_route():
+    """Requires an auth that doesn't appear in the user's permissions"""
     return "Success"
 
 
 client = TestClient(app_to_test)
-os.environ["JWT_SECRET"] = "TEST_SECRET"
+JWT_SECRET = "TEST_SECRET"
+os.environ["JWT_SECRET"] = JWT_SECRET
 
-# all tokens have auth1: True, auth2: True, auth3: False
-USER_JWT = (
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NTQxOTQ4ODA3LCJlbWFpbC"
-    "I6ImxtZW5hQG5jc3UuZWR1IiwiY2FtcHVzX2lkIjoiMDAxMTMyODA4Iiwicm9sZXMiOlsid"
-    "GVzdF91c2VyIl0sImF1dGhvcml6YXRpb25zIjp7ImF1dGgxIjp0cnVlLCJhdXRoMiI6dHJ1"
-    "ZSwiYXV0aDMiOmZhbHNlLCJfcmVhZCI6W10sIl93cml0ZSI6W119fQ.TK96nuYGlBExPSqG"
-    "ngI_7I2DQNrGgtaRFDhN1NJyfio"
+
+def generate_token(permissions=None, exp=None, secret=JWT_SECRET):
+    """
+    Build a JWT for testing.
+    :param list permissions: overrides the payload's "permissions" list.
+    :param int exp: unix timestamp for the payload's "exp". Defaults to one
+        hour from now. Pass a timestamp in the past to produce an expired
+        token.
+    :param str secret: the secret used to sign the token. Use a value other
+        than JWT_SECRET to produce a token with an invalid signature.
+    """
+    payload = dict(
+        {
+            "exp": exp if exp is not None else int(time.time()) + 3600,
+            "email": "lmena@ncsu.edu",
+            "roles": ["test-user"],
+            "inherited_roles": [],
+            "permissions": permissions,
+        }
+    )
+    return jwt.encode(payload, secret, algorithm="HS256")
+
+
+USER_JWT = generate_token(permissions=["auth1:read", "auth1:write", "auth2:read"])
+ALL_PERMISSIONS_JWT = generate_token(
+    permissions=[
+        "auth1:read",
+        "auth1:write",
+        "auth2:read",
+        "auth2:write",
+        "auth3:read",
+        "auth3:write",
+    ]
 )
-ROOT_JWT = (
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NTQxOTQ4ODA3LCJlbWFpbC"
-    "I6ImxtZW5hQG5jc3UuZWR1IiwiY2FtcHVzX2lkIjoiMDAxMTMyODA4Iiwicm9sZXMiOlsid"
-    "GVzdF91c2VyIl0sImF1dGhvcml6YXRpb25zIjp7ImF1dGgxIjp0cnVlLCJhdXRoMiI6dHJ1"
-    "ZSwiYXV0aDMiOmZhbHNlLCJyb290Ijp0cnVlLCJfcmVhZCI6W10sIl93cml0ZSI6W119fQ."
-    "8R2uFboSK7FiHtuw8If94pgoNdiWRHuj-yPsl-8sV1U"
+EXPIRED_JWT = generate_token(
+    permissions=["auth1:read", "auth1:write", "auth2:read"], exp=int(time.time()) - 3600
 )
-EXPIRED_JWT = (
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2Njg3MDU2NzMsImVtYWlsIj"
-    "oibG1lbmFAbmNzdS5lZHUiLCJjYW1wdXNfaWQiOiIwMDExMzI4MDgiLCJyb2xlcyI6WyJ0Z"
-    "XN0X3VzZXIiXSwiYXV0aG9yaXphdGlvbnMiOnsiYXV0aDEiOnRydWUsImF1dGgyIjp0cnVl"
-    "LCJhdXRoMyI6ZmFsc2UsIl9yZWFkIjpbXSwiX3dyaXRlIjpbXX19.UmLWB6Pf-hwQaHBdrg"
-    "Iq662_H1ZwAT1fWBzL1sfApIo"
-)
-INVALID_SIGNATURE_JWT = (
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjQwOTk3Mzc4MDAsImVtYWlsIj"
-    "oibG1lbmFAbmNzdS5lZHUiLCJjYW1wdXNfaWQiOiIwMDExMzI4MDgiLCJyb2xlcyI6WyJ0Z"
-    "XN0X3VzZXIiXSwiYXV0aG9yaXphdGlvbnMiOnsiYXV0aDEiOnRydWUsImF1dGgyIjp0cnVl"
-    "LCJhdXRoMyI6ZmFsc2UsInJvb3QiOnRydWUsIl9yZWFkIjpbXSwiX3dyaXRlIjpbXX19.qo"
-    "4DfBZaP-rHptkcwNqh4Lcmhn14ClJ4NK1sKC499pY"
+INVALID_SIGNATURE_JWT = generate_token(
+    permissions=["auth1:read", "auth1:write", "auth2:read"], secret="WRONG_SECRET"
 )
 
 
 def test_one_requirement():
     """User can access a route that requires one auth"""
-    response = client.get("/1", headers={"Authorization": "Bearer " + USER_JWT})
+    response = client.get("/normal-auth", headers={"Authorization": "Bearer " + USER_JWT})
     assert response.status_code == 200
     assert "Success" in response.text
 
 
 def test_multiple_requirements():
     """User can access a route that requires multiple auths"""
-    response = client.get("/12", headers={"Authorization": "Bearer " + USER_JWT})
+    response = client.get("/multiple-auths", headers={"Authorization": "Bearer " + USER_JWT})
     assert response.status_code == 200
     assert "Success" in response.text
 
 
 def test_expired_token():
     """User can't access a route with an expired token"""
-    response = client.get("/1", headers={"Authorization": "Bearer " + EXPIRED_JWT})
+    response = client.get("/normal-auth", headers={"Authorization": "Bearer " + EXPIRED_JWT})
     assert response.status_code == 401
     assert "Success" not in response.text
 
 
 def test_invalid_signature_token():
     """User can't access a route using the wrong JWT_SECRET"""
-    response = client.get("/1", headers={"Authorization": "Bearer " + INVALID_SIGNATURE_JWT})
+    response = client.get(
+        "/normal-auth", headers={"Authorization": "Bearer " + INVALID_SIGNATURE_JWT}
+    )
     assert response.status_code == 400
     assert "Success" not in response.text
 
 
 def test_no_token_provided():
     """User should get a 401 if no token is provided."""
-    response = client.get("/1", headers={"Authorization": ""})
+    response = client.get("/normal-auth", headers={"Authorization": ""})
     assert response.status_code == 401
     assert "Success" not in response.text
 
 
 def test_no_header_provided():
     """User should get a 401 if no header is provided."""
-    response = client.get("/1")
+    response = client.get("/normal-auth")
     assert response.status_code == 401
     assert "Success" not in response.text
 
 
 def test_unauthorized_requirement():
     """
-    User can't access a route with a required auth set to False.
-    Root user can still access the route.
+    User can't access a route with a required auth that isn't in their
+    permissions. A user with that permission can still access the route.
     """
-    response = client.get("/13", headers={"Authorization": "Bearer " + USER_JWT})
+    response = client.get(
+        "/not-enough-permissions", headers={"Authorization": "Bearer " + USER_JWT}
+    )
     assert response.status_code == 403
     assert "Success" not in response.text
 
-    response = client.get("/13", headers={"Authorization": "Bearer " + ROOT_JWT})
+    response = client.get(
+        "/not-enough-permissions", headers={"Authorization": "Bearer " + ALL_PERMISSIONS_JWT}
+    )
     assert response.status_code == 200
     assert "Success" in response.text
 
@@ -126,12 +148,14 @@ def test_unauthorized_requirement():
 def test_nonexistant_requirement():
     """
     User can't access a route that requires an auth user doesn't have.
-    Root user can still access the route.
+    A user with that permission can still access the route.
     """
-    response = client.get("/4", headers={"Authorization": "Bearer " + USER_JWT})
+    response = client.get("/no-permissions", headers={"Authorization": "Bearer " + USER_JWT})
     assert response.status_code == 403
     assert "Success" not in response.text
 
-    response = client.get("/4", headers={"Authorization": "Bearer " + ROOT_JWT})
+    response = client.get(
+        "/no-permissions", headers={"Authorization": "Bearer " + ALL_PERMISSIONS_JWT}
+    )
     assert response.status_code == 200
     assert "Success" in response.text

@@ -1,4 +1,4 @@
-"""Contains the AuthChecker class, verifying user authorizations"""
+"""Contains the AuthChecker class, verifying user permissions"""
 
 import os
 from fastapi import Header, HTTPException
@@ -13,12 +13,12 @@ class AuthChecker:
     An HTTP Exception is raised if the user is not authorized.
     """
 
-    def __init__(self, *required_authorizations):
+    def __init__(self, *required_permissions):
         """
-        :param strings required_authorizations: Each string given is the
-        title of an authorization required by the function.
+        :param strings required_authorizations: Each string given is a
+        permission required by the function.
         """
-        self.required_authorizations = required_authorizations
+        self.required_permissions = required_permissions
 
     def __call__(self, authorization=Header(default="")):
         """
@@ -29,9 +29,9 @@ class AuthChecker:
 
     def check_authorization(self, authorization_header):
         """
-        Get the jwt from the header, decode to get the user's authorizations.
+        Get the jwt from the header, decode to get the user's permissions.
         Throw HTTP Exception if the user doesn't have all of the function's
-        required authorizations.
+        required permissions.
         :param str authorization_header: the request's Authorization header.
             The header value is a JWT.
         """
@@ -50,11 +50,8 @@ class AuthChecker:
                 400, detail=("Token has an invalid signature. " "Check the JWT_SECRET variable.")
             )
 
-        user_authorizations = payload.get("authorizations", {})
-        if user_authorizations.get("root") is True:
-            # Then the user is authorized. Continue without any exceptions.
-            return
-        for required_auth in self.required_authorizations:
-            # Throw a 403 if the authorization isn't there or is set to False:
-            if user_authorizations.get(required_auth, False) is False:
-                raise HTTPException(403, detail=f"{required_auth} authorization is required.")
+        user_permissions = payload.get("permissions", [])
+        for required_permission in self.required_permissions:
+            # Throw a 403 if the user doesn't have the required permission:
+            if required_permission not in user_permissions:
+                raise HTTPException(403, detail=f"{required_permission} permission is required.")
