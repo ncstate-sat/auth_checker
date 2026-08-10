@@ -20,8 +20,8 @@ A library for authorizing users based on their assigned roles, parsed from their
 from auth_checker import AuthChecker
 from fastapi import APIRouter, Depends
 
-# authorize a user with "personnel_read" permissions to look up personnel
-@router.get("", tags=["Personnel"], dependencies=[Depends(AuthChecker("personnel_read"))])
+# authorize a user with "personnel:read" permissions to look up personnel
+@router.get("", tags=["Personnel"], dependencies=[Depends(AuthChecker("personnel:read"))])
 ```
 
 #### Authorize an update operation
@@ -30,6 +30,6 @@ from fastapi import APIRouter, Depends
 from auth_checker import AuthChecker
 from fastapi import APIRouter, Depends
 
-# authorize a user with "personnel_write" permissions to disable personnel
-@router.post("/disable", tags=["Personnel"], dependencies=[Depends(AuthChecker("personnel_write"))])
+# authorize a user with "personnel:write" permissions to disable personnel
+@router.post("/disable", tags=["Personnel"], dependencies=[Depends(AuthChecker("personnel:write"))])
 ```
