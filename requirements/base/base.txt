@@ -4,7 +4,6 @@
 #
 #    pip-compile --output-file=requirements/base/base.txt pyproject.toml
 #
-
 annotated-types==0.7.0
     # via pydantic
 anyio==4.4.0
@@ -16,7 +15,9 @@ fastapi==0.110.2
 idna==3.7
     # via anyio
 pydantic==2.6.4
-    # via fastapi
+    # via
+    #   auth-checker (pyproject.toml)
+    #   fastapi
 pydantic-core==2.16.3
     # via pydantic
 pyjwt==2.8.0

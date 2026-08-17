@@ -4,7 +4,6 @@
 #
 #    pip-compile --extra=dev --output-file=requirements/dev/dev.txt pyproject.toml
 #
-
 annotated-types==0.7.0
     # via pydantic
 anyio==4.4.0
@@ -88,7 +87,9 @@ pluggy==1.5.0
 pre-commit==2.21.0
     # via auth-checker (pyproject.toml)
 pydantic==2.6.4
-    # via fastapi
+    # via
+    #   auth-checker (pyproject.toml)
+    #   fastapi
 pydantic-core==2.16.3
     # via pydantic
 pygments==2.18.0

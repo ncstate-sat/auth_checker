@@ -29,6 +29,7 @@ classifiers = [
 dependencies = [
     "fastapi==0.110.2",
     "pyjwt==2.8.0",
+    "pydantic==2.6.4",
 ]
 
 [project.optional-dependencies]

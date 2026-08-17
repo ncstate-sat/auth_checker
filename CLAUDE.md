@@ -4,9 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-`auth-checker` is a small PyPI library (`auth_checker`) that provides a FastAPI dependency, `AuthChecker`, for authorizing requests based on permissions embedded in a JWT. Routes declare required permission strings (e.g. `"personnel:read"`); `AuthChecker` decodes the `Authorization` header's JWT and raises `HTTPException` if the token is missing/expired/invalid or the user's `permissions` claim doesn't contain all required permissions.
+`auth-checker` is a small PyPI library (`auth_checker`) that provides a FastAPI dependency, `AuthChecker`, for authorizing requests based on permissions embedded in a JWT. Routes declare required permission strings (e.g. `"personnel:read"`); `AuthChecker` decodes the `Authorization` header's JWT and raises `HTTPException` if the token is missing/expired/invalid, the payload doesn't match the `TokenPayload` model, or the user's `permissions` claim doesn't contain all required permissions.
 
-The entire implementation is `auth_checker/auth_checker.py` (one class). `auth_checker/__init__.py` just re-exports `AuthChecker`.
+`AuthChecker` lives in `auth_checker/auth_checker.py`. The decoded JWT's claims are modeled by `TokenPayload` (`email: str`, `roles`/`inherited_roles`/`permissions: list[str]`), a pydantic model in `auth_checker/token_payload.py`. `auth_checker/__init__.py` re-exports both `AuthChecker` and `TokenPayload`.
 
 ## Commands
 

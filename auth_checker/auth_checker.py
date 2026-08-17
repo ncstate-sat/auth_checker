@@ -3,6 +3,9 @@
 import os
 from fastapi import Header, HTTPException
 import jwt
+from pydantic import ValidationError
+
+from auth_checker.token_payload import TokenPayload
 
 
 class AuthChecker:
@@ -52,8 +55,12 @@ class AuthChecker:
         except jwt.exceptions.DecodeError:
             raise HTTPException(400, detail="Token could not be decoded")
 
-        user_permissions = payload.get("permissions", [])
+        try:
+            token_payload = TokenPayload(**payload)
+        except ValidationError:
+            raise HTTPException(400, detail="Token payload is missing required fields")
+
         for required_permission in self.required_permissions:
             # Throw a 403 if the user doesn't have the required permission:
-            if required_permission not in user_permissions:
+            if required_permission not in token_payload.permissions:
                 raise HTTPException(403, detail=f"{required_permission} permission is required.")

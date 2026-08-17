@@ -42,7 +42,7 @@ JWT_SECRET = "TEST_SECRET"
 os.environ["JWT_SECRET"] = JWT_SECRET
 
 
-def generate_token(permissions=None, exp=None, secret=JWT_SECRET):
+def generate_token(permissions=None, exp=None, secret=JWT_SECRET, email="lmena@ncsu.edu"):
     """
     Build a JWT for testing.
     :param list permissions: overrides the payload's "permissions" list.
@@ -51,11 +51,12 @@ def generate_token(permissions=None, exp=None, secret=JWT_SECRET):
         token.
     :param str secret: the secret used to sign the token. Use a value other
         than JWT_SECRET to produce a token with an invalid signature.
+    :param str email: overrides the payload's "email" field.
     """
     payload = dict(
         {
             "exp": exp if exp is not None else int(time.time()) + 3600,
-            "email": "lmena@ncsu.edu",
+            "email": email,
             "roles": ["test-user"],
             "inherited_roles": [],
             "permissions": permissions,
@@ -80,6 +81,16 @@ EXPIRED_JWT = generate_token(
 )
 INVALID_SIGNATURE_JWT = generate_token(
     permissions=["auth1:read", "auth1:write", "auth2:read"], secret="WRONG_SECRET"
+)
+MISSING_EMAIL_JWT = jwt.encode(
+    {
+        "exp": int(time.time()) + 3600,
+        "roles": ["test-user"],
+        "inherited_roles": [],
+        "permissions": ["auth1:read"],
+    },
+    JWT_SECRET,
+    algorithm="HS256",
 )
 
 
@@ -150,6 +161,13 @@ def test_unauthorized_requirement():
     )
     assert response.status_code == 200
     assert "Success" in response.text
+
+
+def test_payload_missing_required_field():
+    """User can't access a route with a token payload missing a required field"""
+    response = client.get("/normal-auth", headers={"Authorization": "Bearer " + MISSING_EMAIL_JWT})
+    assert response.status_code == 400
+    assert "Success" not in response.text
 
 
 def test_nonexistant_requirement():

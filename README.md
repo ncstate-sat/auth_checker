@@ -33,3 +33,13 @@ from fastapi import APIRouter, Depends
 # authorize a user with "personnel:write" permissions to disable personnel
 @router.post("/disable", tags=["Personnel"], dependencies=[Depends(AuthChecker("personnel:write"))])
 ```
+
+#### Model the JWT payload
+
+`TokenPayload` models the claims of a decoded JWT: `email`, `roles`, `inherited_roles`, and `permissions`.
+
+```python
+from auth_checker import TokenPayload
+
+payload = TokenPayload(**decoded_jwt)
+```
