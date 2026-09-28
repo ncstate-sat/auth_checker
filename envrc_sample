@@ -1,14 +1,5 @@
 layout pyenv 3.10.4
 
-export AUTHORIZER=casbin_authorizer
+dotenv_if_exists
 
-# MONGO
-export CASBIN_AUTH_URI=mongodb://<MONGO_USER>:<MONGO_PASSWORD>@<MONGO_HOST>/?authSource=Accounts
-export CASBIN_AUTH_DB=Accounts
-export CASBIN_AUTHORIZER_POLICY_ADAPTER=mongo
-
-# REDIS
-# export AUTH_URI=<REDIS_HOST>
-# export AUTH_DB=0
-# export AUTH_PORT=6379
-# export AUTH_PASS=<> # if you have a password
+export JWT_SECRET=<>
