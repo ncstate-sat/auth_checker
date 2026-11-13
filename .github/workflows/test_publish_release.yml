@@ -19,8 +19,12 @@ env:
 
 jobs:
   run_tests:
-    name: Run Tests
+    name: Run Tests (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.15"]
     steps:
       - name: Get Code
         uses: actions/checkout@v3
@@ -34,9 +38,10 @@ jobs:
           path: actions
 
       - name: Setup Python
+        id: setup_python
         uses: actions/setup-python@v4
         with:
-          python-version: "3.10"
+          python-version: ${{ matrix.python-version }}
 
       - name: Cache Packages
         uses: actions/cache@v3
