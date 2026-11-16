@@ -8,7 +8,7 @@ build-backend = "flit_core.buildapi"
 
 [project]
 name = "auth-checker"
-version = "3.0.1"
+version = "3.1.0"
 authors = [
   { name="Ryan Semmler", email="rsemmle@ncsu.edu" },
   { name="Luc Sanchez", email="lgsanche@ncsu.edu" },
@@ -27,9 +27,9 @@ classifiers = [
 ]
 
 dependencies = [
-    "fastapi==0.110.2",
-    "pyjwt==2.8.0",
-    "pydantic==2.6.4",
+    "fastapi>=0.110.2, <1.0.0",
+    "pyjwt>=2.8.0, <3.0.0",
+    "pydantic>=2.6.4, <3.0.0",
 ]
 
 [project.optional-dependencies]

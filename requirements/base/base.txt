@@ -4,32 +4,44 @@
 #
 #    pip-compile --output-file=requirements/base/base.txt pyproject.toml
 #
-annotated-types==0.7.0
+annotated-doc==0.0.6
+    # via fastapi
+annotated-types==0.8.0
     # via pydantic
-anyio==4.4.0
-    # via starlette
+anyio==4.16.0
+    # via
+    #   fastapi
+    #   starlette
 exceptiongroup==1.3.1
     # via anyio
-fastapi==0.110.2
+fastapi==0.162.5
     # via auth-checker (pyproject.toml)
-idna==3.7
+idna==3.20
     # via anyio
-pydantic==2.6.4
+opentelemetry-api==1.45.2
+    # via fastapi
+pydantic==2.14.3
     # via
     #   auth-checker (pyproject.toml)
     #   fastapi
-pydantic-core==2.16.3
+pydantic-core==2.50.4
     # via pydantic
-pyjwt==2.8.0
+pyjwt==2.15.1
     # via auth-checker (pyproject.toml)
-sniffio==1.3.1
-    # via anyio
-starlette==0.37.2
+starlette==1.7.0
     # via fastapi
-typing-extensions==4.12.2
+typing-extensions==4.16.0
     # via
     #   anyio
     #   exceptiongroup
     #   fastapi
+    #   opentelemetry-api
     #   pydantic
     #   pydantic-core
+    #   pyjwt
+    #   starlette
+    #   typing-inspection
+typing-inspection==0.4.5
+    # via
+    #   fastapi
+    #   pydantic
